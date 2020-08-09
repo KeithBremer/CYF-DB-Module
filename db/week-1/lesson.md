@@ -86,42 +86,6 @@ As mentioned previously, a relational database is a specific type of database. D
   <img src="table-diagram.png" display="block" width="60%"/>
 </p>
 
-### Check your PostgreSQL installation
-
-Open a terminal in your laptop and verify the command `psql --version` returns the version of PostgreSQL.
-
-To start using PostgreSQL you first need authorisation using a username and password. You can create these using a shell command from the terminal:
-```
-  $ sudo -u postgres createuser -P --createdb <name>
-```
-This will ask for your login password to run the sudo command. The other parts of the line are:
-
-    -u postgres       tells sudo to run createuser as user postgres (set up when you installed postgres)
-
-    createuser        the shell command to create a PostgeSQL user
-
-    -P                (upper case) tells createuser to ask for the new user's password
-
-    --createdb        grants the user the privileges to create databases
-
-    <name>            the new username (hint: make it the same as your o/s username)
-
-Remember the new username and password details - you will need them later.
-
-### Creating a new database
-
-In a terminal, create a new database named `cyf_hotels` with the following command:
-
-```
-createdb cyf_hotels
-```
-
-Then connect to your database with:
-
-```
-psql cyf_hotels
-```
-
 ## Communicating with the database using SQL
 
 We use SQL to perform actions on the database and initially we can use a terminal-like utility to do this.  The utility is named `psql` and is run using the command:
