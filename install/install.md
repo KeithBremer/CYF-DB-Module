@@ -5,22 +5,26 @@ We shall be using PostgreSQL - a widely used relational database. It's open-sour
 * If you use Windows then see [here](#windows-install).
 * If you have Mac-OS then see [here](#macos-install).
 
+If you don't use any of the above then please talk to a mentor about how to proceed.
+
 ---
 ## Ubuntu Install
-If you have Ubuntu as your operating system you can install PostGreSQL using:
+---
+
+If you have Ubuntu as your operating system you can install PostgreSQL using:
 ```
 $ sudo apt-get install postgresql postgresql-contrib
 ```
 
-Enter your ubuntu password when asked for it.
+Enter your ubuntu password when asked for it (it's needed for the `sudo` command).
 
 For this command you must confirm that you are happy to install the packages and any needed dependencies that the package manager identifies. Generally just type `Y` or `y` to proceed.
 
 To verify your installation enter the following commands:
 ```
-    $ sudo -u postgres psql --version
+$ sudo -u postgres psql --version
 ```
-Enter your Ubuntu user password when prompted - this is required by the sudo part of the command. The command should display something like this:
+Again, enter your Ubuntu user password when prompted. The command should display something like this:
 
     psql (PostgreSQL) 12.2 (Ubuntu 12.2.4)
 
@@ -78,7 +82,7 @@ Note that to exit psql back to the terminal prompt use the command `\q`.
 ### Ubuntu Install Complete
 ---
 ## Windows Install
-
+---
 **Note that you must be logged in as a user with Administrator privileges on Windows for all these steps.**
 
 If you have Windows as your operating system you can install PostgreSQL from the installer executable. Download this from https://www.postgresql.org/download/windows/ but make sure you choose PostgreSQL version 12 for 64-bit and version 10 for 32-bit. Once you have downloaded the installer then run the file (postgresql-12.3.2-windows-x64.exe or similar). The installer prompts for various information as it initialises and you can mostly take the default values. Make a note of the installation folder when prompted for it - you don't need to change it. You must, however, provide a password for the postgres user - make sure you remember this password!
@@ -105,7 +109,6 @@ Enter the password for user `postgres` (defined during installation) when prompt
 
     psql (PostgreSQL) 12.2
 
----
 ### Create a User and the Database
 PostgreSQL initially uses an authorisation mode that depends on the operating system username; that is why we had to switch to user `postgres` to verify our installation because the installer only creates this user.
 
@@ -176,6 +179,7 @@ Note that to exit psql back to the terminal prompt use the command `\q`.
 
 ---
 ## MacOS Install
+---
 **Note that you must be logged in as a user with Administrator privileges on OSX for all these steps.**
 
 From the Macintosh OSX system you can install PostgreSQL from the Postgres.app package. Download this from https://postgresapp.com but make sure you choose PostgreSQL version 12 and the appropriate platform for your Mac. Once you have downloaded Postgres you can open the disk image from your Downloads folder. Drag the Postgres icon to the Applications folder.
