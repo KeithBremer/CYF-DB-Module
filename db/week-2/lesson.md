@@ -102,7 +102,7 @@ SELECT count(*) FROM customers WHERE country = 'Belgium';
 1.  Get the numbers of rows in each of the tables: rooms, room_types, customers and reservations.
 2.  How many reservations do we have for next month?
 3.  How many invoices are still unpaid from over a month ago and what is the total owed?
-4.  What is the maximum gap between a customer booking a room and the checkin date for that booking?
+4.  What is the maximum gap in days between a customer booking a room and the checkin date for that booking?
 
 ### Grouping Rows for Aggregation
 You can calculate aggregates over subsets of rows using the GROUP BY clause:
@@ -269,11 +269,13 @@ Use joins to combine data from more than one table. Joins use column values to m
 
 The join columns are usually referred to as foreign keys and primary keys.
 
+![ER Diagram](er-diagram.png)
+
 ![Join Diagram](join-diagram.png)
 
 ### Foreign and Primary Keys
 
-Each table should have a **Primary Key**. This is one or more columns whose values, when combined, provide a unique identifying value for each row. Natural primary keys are often difficult to find so many tables use an arbitrary integer whose value is automatically generated when the row is created. When joining tables we need to match a single row to one or more other rows, usually in another table - for example, matching a customer to her/his reservations. The single row (customer) is usually identified by its primary key value.
+Each table should have a **Primary Key**. This is one or more columns whose values, which cannot be NULL, are combined to provide a unique identifying value for each row. Natural primary keys are often difficult to find so many tables use an arbitrary integer whose value is automatically generated when the row is created. When joining tables we need to match a single row to one or more other rows, usually in another table - for example, matching a customer to her/his reservations. The single row (customer) is usually identified by its primary key value.
 
 **Foreign Keys** are the columns in a table that reference corresponding columns in another table (although self-referencing foreign keys can reference the same table). For example, the `res_id` column in the invoices table references the `id` column in the reservations table (see diagram above).
 
@@ -292,7 +294,7 @@ SELECT r.cust_id, r.room_no, i.invoice_date, i.total
 #### Notice:
 
 * The new keyword JOIN with ON (predicate)
-* Table aliases (r and i) used to qualify columns
+* Table aliases (`r` and `i`) used to qualify columns
 
 The new syntax follows the following pattern:
 
@@ -353,7 +355,7 @@ If you want to find out about these kinds of JOIN refer to the [PostgreSQL docum
 
 - Try and understand each of the queries above in your `psql` prompt
 - Which customers occupied room 111 and what are their details?
-- List the customer name, room details (type and rate), nights stay and departure dates for all UK customers.
+- List the customer name, room details (room number, type and rate), nights stay and departure dates for all UK customers.
 - List name, phone and email along with all reservations and invoices for customer Mary Saveley.
 
 ---
@@ -394,7 +396,7 @@ This behaviour has some impacts on operations like JOIN, where NULL values won't
           a.col IS NULL AND b.col IS NULL)
 ```
 ***WARNING:***
-*However, be aware that this is not a sensible situation - join columns containing NULL should be expected to not match or should be disallowed (see Primary Keys later)*
+*However, be aware that this is not a sensible situation - join columns containing NULL should be expected to not match or should be disallowed (see Primary Keys above)*
 
 You can explicitly provide NULL as a value in INSERT and UPDATE statements, for example:
 
@@ -429,7 +431,7 @@ Notes:
 ### Exercise 6
 1.  Which customers have not yet provided a phone number?
 2.  Update room 304 such that it does not have a room_type.
-3.  List customers who have reservations replacing the room number with 'Not Assigned' if it is NULL.
+3.  List customers and their reservations replacing the room number with 'Not Assigned' if it is NULL.
 
 ---
 
@@ -448,7 +450,7 @@ CREATE TABLE inventory (
   cost          NUMERIC(6,2)
 );
 ```
-***Note: you may never need to do this. Database design is a task that requires specialist skills and considerable experience of using database technologies.***
+***Note: you may never need to do this. Database design is a task that requires specialist skills and considerable experience.***
 
 ### Naming Tables and Columns
 
@@ -476,7 +478,7 @@ The `cost` column is NUMERIC(6,2), a number that can accurately store up to 6 di
 There are several more standard data types (plus a few non-standard ones), including:
 Type | Notes
 --- | ---
-DATE | dates with no time component (may display as 00:00:00)
+DATE | dates with no time component
 TIMESTAMP | date and time (accurate to milliseconds)
 BOOLEAN | TRUE, FALSE or NULL
 TEXT | variable length text with no length limit (up to max allowed for the RDBMS - about 1Gb in PostgreSQL)
@@ -534,14 +536,14 @@ CREATE TABLE <table name> (
   <pk col 1>     <data type>,
   <pk col 2>     <data type>,
   ... ,
-  PRIMARY KEY (<pk col 1>, pk col 2>),
+  PRIMARY KEY (<pk col 1>, <pk col 2>),
   ...
 );
 ```
 For example:
 ```sql
 CREATE TABLE invoice_items (
-  inv_id        INTEGER,
+  inv_id        INTEGER REFERENCES invoices(id),
   item_no       INTEGER,
   ... ,
   PRIMARY KEY (inv_id, item_no),
@@ -549,6 +551,8 @@ CREATE TABLE invoice_items (
 );
 ```
 There can be only one primary key in a table definition.
+
+**Note: a partial primary key can be a foreign key as well.**
 
 #### Defining Foreign Keys
 
