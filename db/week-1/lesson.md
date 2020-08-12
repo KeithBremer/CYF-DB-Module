@@ -157,6 +157,17 @@ This is also a useful command to see what columns exist in a table. You can also
 
 Note that the use of UPPER/lower case is only to emphasise and differentiate the SQL keywords (upper case) from the other names (lower case) e.g. column and table names. SQL keywords are not case-sensitive.
 
+### Scrolling the Results
+When you issue a `SELECT` that returns a lot of data `psql` displays it one screenful at a time. To get the next screenful just press the Space key. You can also use the Up and Down arrow keys for line-by-line control and you can go back one screen with the 'B' key.
+
+When you have finished reading the output use the 'Q' key to quit the display manager.
+```
+    Space       Next screenful
+    'B'         Previous screenful
+    Up Arrow    Next line
+    Down Arrow  Previous line
+    'Q'         Quit back to prompt
+```
 
 ## Exercise 1
 1. List the name, phone and email of all customers
@@ -556,7 +567,7 @@ Fork and clone the repository above to get the homework for this week.
 
 Create a new branch from `Master` to start working on this weeks homework. It should be called `[YOUR_NAME]/Week1`.
 
-When you have completed the homework create a pull request back to the `CodeYourFuture/Databases-Homework` repository so your teach can feedback on it.
+When you have completed the homework create a pull request back to the parent repository so your teacher(s) can feedback on it.
 
 ### Tasks
 
