@@ -14,7 +14,7 @@ If you don't use any of the above operating systems then please talk to a mentor
 ## Ubuntu Install
 ---
 
-If you have Ubuntu as your operating system you can install PostgreSQL using:
+If you have Ubuntu as your operating system you can install PostgreSQL using the following commands in the terminal (note: the `$` is the system prompt):
 ```
 $ sudo apt-get install postgresql postgresql-contrib
 ```
