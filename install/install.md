@@ -88,7 +88,7 @@ Note that to exit psql back to the terminal prompt use the command `\q`.
 ---
 **Note that you must be logged in as a user with Administrator privileges on Windows for all these steps.**
 
-If you have Windows as your operating system you can install PostgreSQL from the installer executable. Download this from https://www.postgresql.org/download/windows/ but make sure you choose PostgreSQL version 12 for 64-bit and version 10 for 32-bit. Once you have downloaded the installer then run the file (postgresql-12.3.2-windows-x64.exe or similar). The installer prompts for various information as it initialises and you can mostly take the default values. Make a note of the installation folder when prompted for it - you don't need to change it. You must, however, provide a password for the postgres user - make sure you remember this password!
+If you have Windows as your operating system you can install PostgreSQL from the installer executable. Download this from https://www.postgresql.org/download/windows/ but make sure you choose PostgreSQL version 12 for 64-bit or version 10 for 32-bit. Once you have downloaded the installer then run the file (postgresql-12.3-2-windows-x64.exe or similar). The installer prompts for various information as it initialises and you can mostly take the default values. Make a note of the installation folder when prompted for it - you don't need to change it. You must, however, provide a password for the postgres user - make sure you remember this password!
 
 If prompted to configure StackBuilder at the end of installation, just click Cancel - we won't need it.
 
@@ -140,6 +140,18 @@ C:\...> psql -U <username> cyf_hotel
 ```
 then enter your password when prompted.
 
+Windows users need to change the console character code page for each new session. Issue the command:
+```
+C:\...> chcp 65001
+```
+to set the current code page to use UTF-8 encoding. You will see a warning message when you enter `psql` as follows:
+```
+WARNING: Console code page (65001) differs from Windows code page (1252)
+         8-bit characters might not work correctly. See psql reference
+         page "Notes for Windows users" for details.
+```
+Please ignore this - your setting will allow psql to display customer names, etc., which are stored in UTF-8 format, correctly.
+
 ### Enabling Passwordless Logins
 If you have chosen your username as the same as your windows user you can allow passwordless logins from your own PC. To do this you need to modify a configuration file. Locate the file `pg_hba.conf` in the installation directory's `data` subdirectory. For example, if the installation directory is:
 
@@ -153,7 +165,7 @@ Open this file using your favourite text editor (Visual Studio should work OK). 
 
 You should find a number of non-comment lines below this - these define login methods for different situations. Enter the following line just below the header line:
 
-    host    sameuser        all             ::1/128                 trust
+    host    cyf_hotel       all             ::1/128                 trust
 
 Save the changes.
 
@@ -169,12 +181,11 @@ The output from this command should look something like this:
 ```
     psql (12.4)
     Type "help" for help.
-
-    username=>
-```
-The last line (`username=>`) is the `psql` command prompt, made up of your user name plus '=>'. Clearly the actual prompt will have your user name, so if the username is `keith` then the prompt will be:
-```
-    keith=>
+    WARNING: Console code page (65001) differs from Windows code page (1252)
+         8-bit characters might not work correctly. See psql reference
+         page "Notes for Windows users" for details.
+         
+    cyf_hotel=>
 ```
 Note that to exit psql back to the terminal prompt use the command `\q`.
 
