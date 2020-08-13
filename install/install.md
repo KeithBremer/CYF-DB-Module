@@ -6,7 +6,9 @@ We shall be using PostgreSQL - a widely used relational database. It's open-sour
 * If you use Windows then see [here](#windows-install).
 * If you have Mac-OS then see [here](#macos-install).
 
-If you don't use any of the above then please talk to a mentor about how to proceed.
+If you get stuck at any stage please post a message requesting help on #north-west-class-3.
+
+If you don't use any of the above operating systems then please talk to a mentor about how to proceed.
 
 ---
 ## Ubuntu Install
