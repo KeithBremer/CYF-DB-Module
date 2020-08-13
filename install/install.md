@@ -1,3 +1,4 @@
+# Install PostgreSQL
 ## Let's Get Started
 We shall be using PostgreSQL - a widely used relational database. It's open-source and free to use. If you haven't already installed it then follow the instructions below:
 
