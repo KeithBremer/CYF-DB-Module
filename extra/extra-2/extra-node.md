@@ -1,8 +1,8 @@
 # More Uses of Node.js for SQL
 
-## Using a Single Connection for Multiple SQL
+## Understanding Connections to PostgreSQL
 
-So far in the CYF course we have used the `db.query` method for executing SQL. This is fine for a single SQL command but is inefficient or simply won't work for more complex situations that involve multiple SQL commands.
+So far in the CYF course we have used the `db.query` method for executing SQL. By using `db.query` the server opens a new connection, executes the query then closes the connection. This is fine for a single SQL command but is inefficient or simply won't work for more complex situations that involve multiple SQL commands.
 
 Just to recap, we used the following preamble to configure our server to use express, bodyparser and postgres:
 
@@ -45,15 +45,24 @@ app.post("/customers", function (req, res) {
       .status(400)
       .send("Phone number can contain only 0-9, +, -, (, ) or space.");
   }
+  //
+  // Check the customer's email isn't already in the table
+  //
   db.query(
     "SELECT 1 FROM customers WHERE email=$1",
     [custEmail],
     (err, result) => {
       if (result.rowCount > 0) {
+        //
+        // The email already exists in the table so return an error
+        //
         return res
           .status(400)
           .send("A customer with that email address already exists!");
       } else {
+        //
+        // The email is not in the table so insert the new customer
+        //
         db.query(
           "INSERT INTO customers (name, email, phone) " +
             "VALUES ($1, $2, $3) " +
@@ -76,21 +85,23 @@ app.post("/customers", function (req, res) {
 
 Because this uses `db.query` twice, once to check the email is not present and again to insert the new customer, it requires two separate connections to the database, one for each `db.query`. Since connections are expensive to acquire it makes sense to try to reduce them if possible, which we can do in this case.
 
+## Using a Single Connection for Multiple SQL Commands
+
 Instead of using `db.query` for each SQL command we first of all establish a connection:
 
 ```js
-  db.connect((err, client, release) => { ... });
+  db.connect((err, conn, release) => { ... });
 ```
 
-The `db.connect` method uses a callback function with three arguments, `(err, client, release)`.
+The `db.connect` method uses a callback function with three arguments, `(err, conn, release)`.
 
 The `err` argument is as before, it is either undefined if no error occurred or an appropiate message if the connection failed.
 
-The `client` argument takes the connection information and makes it available for the duration of the callback function with methods such as `client.query`. That is very similar to the `db.query` method we've used before but doesn't establish its own connection, it uses the one we've created using `db.connect`.
+The `conn` argument takes the connection information and makes it available for the duration of the callback function with methods such as `conn.query`, which is very similar to the `db.query` method we've used before but doesn't establish its own connection, it uses the one we've created using `db.connect`.
 
 The `release` argument takes as its value a function that will release the connection when no longer needed.
 
-As before, all the work is done within the callback function using multiple invocations of the `client.query` method to execute SQL. For example:
+As before, all the work is done within the callback function using multiple invocations of the `conn.query` method to execute SQL but this time using just the one connection. For example:
 
 ```js
 ...
@@ -98,9 +109,9 @@ app.post("/customers", function(req, res) {
   const custName = req.body.name;
   const custEmail = req.body.email;
   const custPhone = req.body.phone;
-  ...
-  db.connect((err, client, release) => {
-    client.query("SELECT 1 FROM customers WHERE email=$1", [custEmail],
+  // ... Omitted the code to check the phone number to simplify the example
+  db.connect((err, conn, release) => {
+    conn.query("SELECT 1 FROM customers WHERE email=$1", [custEmail],
             (err, result) => {
       if (result.rowCount > 0) {
         release();
@@ -108,7 +119,7 @@ app.post("/customers", function(req, res) {
           .status(400)
           .send("A customer with that email address already exists!");
       } else {
-        client.query("INSERT INTO customers (name, email, phone) " +
+        conn.query("INSERT INTO customers (name, email, phone) " +
                 "VALUES ($1, $2, $3) " +
                 "RETURNING id", [custName, custEmail, custPhone],
           (err, result) => {
@@ -127,7 +138,7 @@ app.post("/customers", function(req, res) {
 });
 ```
 
-Notice that in this example we're using `client.query` instead of `db.query` but the rest of the code is very similar to the previous example.
+Notice that in this example we're using `conn.query` instead of `db.query` but the rest of the code is very similar to the previous example.
 
 You may have noticed the addition of a few calls of the `release()` function - these are important. You must call `release()` to release a connection you have established using `db.connect` otherwise you could exhaust the pool of available connections. The above code calls `release()` at every point where the endpoint could exit.
 
@@ -176,10 +187,11 @@ app.post("/customers", function(req, res) {
   const custEmail = req.body.email;
   const custPhone = req.body.phone;
   ...
-  let result;
-
+  
   (async () => {
     try {
+      let result;
+
       const conn = await db.connect();
       result = await conn.query("SELECT 1 FROM customers WHERE email=$1", [custEmail]);
       if (result.rowCount > 0) {
@@ -203,7 +215,7 @@ app.post("/customers", function(req, res) {
 });
 ```
 If you compare the above with the callback version of the same thing you'll notice:
-* A much simpler code structure to the whole endpoint
+* A simpler code structure to the whole endpoint, which can become very significant in complex cases
 * The use of `try {...} catch ...` to handle errors, saving a lot of effort.
 
 The above example involves just two SQL commands and doesn't require a transaction as it just performs a simple INSERT. In more complex cases where several tables need changes then transactions can be used and are often essential to avoid inconsistencies.
@@ -255,7 +267,8 @@ The problem arises in the time spent by the user checking and making the changes
 There are two ways to deal with this. We could lock the relevant row(s) when a user queries the initial data (e.g. customer and reservation details) but this could cause concurrency problems and is also not possible in a web-based application. In order to hold a lock we must retain the same connection session on the database but node releases the connection as it returns to the user.
 
 The second way is to use what is called "optimistic locking". We only lock the records to be updated after the user has submitted their changes. This approach requires some extra processing, in particular we need to be sure the data to be changed hasn't been modified by another user since the original query. There are two main ways to do this:
-1.  Send the results of the original query along with the changes from the browser to the server
+1.  Send the results of the original query along with the changes from the browser to the server<br>
+    Note that this requires the browser to store those original values so they can be returned to the server
 2.  Create a new column in the table to be updated (e.g. row_version) that is incremented each time a change is made
 
 The first approach has the advantage that it doesn't need any special design changes to the tables but requires us to compare the results of the original query (sent from the browser) with the results of a new query executed before we perform the update.
@@ -267,17 +280,18 @@ The method you use will depend on a number of factors but most likely will be di
 Below is an example, with comments in the code, based on method 1. for the reservation checkin process given above. This now requires a more complex JSON body - it must include both the assigned room no and the adjusted checkout date but also the data from the original query, for example:
 ```js
 {
-  original: {
-              id: 43,
-              cust_id: 104,
-              checkin_date: "2020-05-13",
-              checkout_date: "2020-06-19",
-              no_guests: 2,
-              booking_date: "2020-06-05"
-            },
-  changes:  {
-              room: 309
-            }
+  "original": {
+                "id": 43,
+                "cust_id": 104,
+                "checkin_date": "2020-05-13",
+                "checkout_date": "2020-06-19",
+                "room_no": null,
+                "no_guests": 2,
+                "booking_date": "2020-06-05"
+              },
+  "changes":  {
+              "room": 309
+              }
 }
 ```
 
@@ -292,7 +306,7 @@ app.put("/reservations/checkin/:id", function(req, res) {
   //
   // Function to compare two objects for equality of properties
   // Note: this does not perform a true equality test but compares
-  //   attributes in 'a' that al;so occur in 'b'. Any attributes in
+  //   attributes in 'a' that also occur in 'b'. Any attributes in
   //   'b' that don't appear in 'a' are not checked.
   //
   function objEqual (a, b) {
@@ -304,10 +318,15 @@ app.put("/reservations/checkin/:id", function(req, res) {
   return true
   }
 
-  let result;
+  //
+  // Here is the main part of the endpoint code - checking the original data is unchanged then 
+  // applying the changes.
+  //
 
   (async () => {
     try {
+      let result;
+
       const conn = await db.connect();
       await conn.query("BEGIN TRANSACTION");
       //
@@ -317,7 +336,7 @@ app.put("/reservations/checkin/:id", function(req, res) {
       // If they are the same then proceed normally, otherwise return an error to the user
       //
       result = await conn.query(
-          "SELECT cust_id, checkin_date, checkout_date, no_guests, booking_date" +
+          "SELECT cust_id, checkin_date, checkout_date, room_no, no_guests, booking_date" +
             " FROM reservations" +
             " WHERE id = $1" +
             " FOR UPDATE",    // Note - using the FOR UPDATE option
@@ -328,7 +347,7 @@ app.put("/reservations/checkin/:id", function(req, res) {
       //
       if (objEqual(result.rows[0], req.body.original)) {
         //
-        // Row = original, so now we do the work of the transaction...
+        // Latest row = original, so now we are OK to continue...
         //
         if (resCheckout === undefined) {
           await conn.query("UPDATE reservations" + 
@@ -347,12 +366,18 @@ app.put("/reservations/checkin/:id", function(req, res) {
         //
         // By this point we've completed the changes successfully
         //
-      } else {      // Here if the row doesn't match the original
+      } else {
+        //
+        // Here if the row doesn't match the original
+        //
         conn.query("ROLLBACK");
         conn.release();  
-        res.status(400).json({error: "Row modified by another user - please retry."});
+        res.status(400).json({error: "Data modified by another user - please retry."});
       }
     } catch(err) {
+      //
+      // General error handling in the case of database errors
+      //
       if (conn != null) {
         conn.query("ROLLBACK");
         conn.release();
@@ -362,4 +387,16 @@ app.put("/reservations/checkin/:id", function(req, res) {
   })();
 });
 ```
+
+That is doing a lot more work than the previous version of our checkin routine so it's rather more code. It is, however, a much more robust piece of code and is able to cope with multi-user activity that could break the previous version.
+
+Just to recap, the sequence of events is as follows:
+1.  The user queries to get the data they need to complete the checkin process (e.g. customer and reservation details)
+2.  The code in the browser saves the results of the query locally
+3.  The user spends time completing the checkin details
+4.  The user clicks the button to send the changes to the server, the browser also sends the original query results
+5.  The server issues a query against the reservations table to ensure no other user has changed that reservation while our user was working
+6.  If the results of the query at (6.) returns the same data as the original (sent by the browser) then we can continue with the update
+7.  If the results are different then we abort the transaction and send a message to the user saying another user has changed the data
+
 
