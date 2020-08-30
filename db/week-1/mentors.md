@@ -7,6 +7,12 @@ The module starts with some essential background, then loading sample data using
 
 The last day's teaching concentrates on expanding the use of SQL from Node.js for more selective queries, insert, update and delete.
 
+## Presentation Slides
+You can get these from Google Docs at <br>
+https://docs.google.com/presentation/d/1swiJj3KzDiakAPfR71rJ5NWWL7-vqlGEu8W5EoU2v1I/<br>
+or as a Powerpoint file [here](./CYF_DB_1.pptx)
+
+
 ## Why Use PostgreSQL?
 Primarily because it's both free and closer to the SQL standard than MySQL (the other contender). We did try to use SQLite in some early courses but it is so far from the standard that it was deemed unsuitable.
 
