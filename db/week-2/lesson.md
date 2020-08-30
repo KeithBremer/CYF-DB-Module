@@ -229,10 +229,10 @@ UPDATE customers
 
 ### Exercise 3
 
-- Update the postcode of the customer named `Alice Evans` to `M21 8UP`
-- Update room 107 to allow up to 3 guests
-- For the customer named `Nadia Sethuraman`, update her address to `2 Blue Street`, her city to `Glasgow` and her postcode to `G12 1AB` in one query
-- Update all the future bookings of customer with ID 96 to 3 nights (starting on the same check-in date) in one query
+1.  Update the postcode of the customer named `Alice Evans` to `M21 8UP`
+2.  Update room 107 to allow up to 3 guests
+3.  For the customer named `Nadia Sethuraman`, update her address to `2 Blue Street`, her city to `Glasgow` and her postcode to `G12 1AB` in one query
+4.  Update all the future bookings of customer with ID 96 to 3 nights (starting on the same check-in date) in one query
 
 ### Deleting a row
 
@@ -252,9 +252,9 @@ DELETE FROM reservations WHERE id=4;
 
 ### Exercise 4
 
-- Delete the booking of customer ID `8` for the date `2020-01-03`
-- Delete all the bookings of customer Juri Yoshido (customer id 96)
-- Delete the customer details for Juri Yoshido
+1.  Delete the bookings of customer ID `108` that do not have a room number assigned
+2.  Delete all the bookings of customer Juri Yoshido (customer id 96)
+3.  Delete the customer details for Juri Yoshido
 
 ---
 ## Joining tables
@@ -353,10 +353,10 @@ If you want to find out about these kinds of JOIN refer to the [PostgreSQL docum
 
 ### Exercise 5
 
-- Try and understand each of the queries above in your `psql` prompt
-- Which customers occupied room 111 and what are their details?
-- List the customer name, room details (room number, type and rate), nights stay and departure dates for all UK customers.
-- List name, phone and email along with all reservations and invoices for customer Mary Saveley.
+1.  Try and understand each of the queries above in your `psql` prompt
+2.  Which customers occupied room 111 and what are their details?
+3.  List the customer name, room details (room number, type and rate), nights stay and departure dates for all UK customers.
+4.  List name, phone and email along with all reservations and invoices for customer Mary Saveley.
 
 ---
 ## The Vexing Question of NULL
@@ -431,7 +431,7 @@ Notes:
 ### Exercise 6
 1.  Which customers have not yet provided a phone number?
 2.  Update room 304 such that it does not have a room_type.
-3.  List customers and their reservations replacing the room number with 'Not Assigned' if it is NULL.
+3.  List customers (name and city) qand their reservations replacing the room number with 'Not Assigned' if it is NULL.
 
 ---
 
@@ -473,11 +473,14 @@ The `description` column is a variable length character value (VARCHAR) that can
 
 The `cost` column is NUMERIC(6,2), a number that can accurately store up to 6 digits, two of which are the fractional part. For example, it can hold 1234.56, -23.45 or 0.01. Note that the NUMERIC data type stores and computes values using decimal values and does not lose accuracy in the same was as, say, floating point values. NUMERIC values take longer in calculations because they don't use simple binary values - user either integer or floating point for speed with compute-heavy numbers.
 
-#### Other Common Data Types
+**NEVER** use floating point for financial values.
+
+### **Other Common Data Types**
 
 There are several more standard data types (plus a few non-standard ones), including:
 Type | Notes
 --- | ---
+INTEGER | binary integer with 32 bits (range approx -2 x 10<sup>9</sup> &ndash; +2 x 10<sup>9</sup>)
 DATE | dates with no time component
 TIMESTAMP | date and time (accurate to milliseconds)
 BOOLEAN | TRUE, FALSE or NULL
@@ -508,9 +511,9 @@ There are some constraints on adding and removing columns, for example, you cann
 
 ---
 
-### Defining Primary and Foreign Keys
+## Defining Primary and Foreign Keys
 
-#### Defining Primary Keys
+### Defining Primary Keys
 
 Use the following templates to define a Primary Key.
 
@@ -550,11 +553,11 @@ CREATE TABLE invoice_items (
   ...
 );
 ```
-There can be only one primary key in a table definition.
+There can be only one primary key in a table definition. The `PRIMARY KEY` definition implies NOT NULL so no column in a table's PK can be set to NULL.
 
 **Note: a partial primary key can be a foreign key as well.**
 
-#### Defining Foreign Keys
+### Defining Foreign Keys
 
 To define foreign keys use either:
 
