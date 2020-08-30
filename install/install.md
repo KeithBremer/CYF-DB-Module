@@ -194,6 +194,10 @@ Note that to exit psql back to the terminal prompt use the command `\q`.
 ---
 ## MacOS Install
 ---
+### Two Methods to Install on Mac OSX
+With the Apple Mac you can choose either a graphical installation or a command line method. The graphical method mostly involves dragging and dropping icons with a little bit of command line to configure the tools we need. The command line method uses only command line but is fairly simple.
+
+### Graphical Installation
 **Note that you must be logged in as a user with Administrator privileges on OSX for all these steps.**
 
 From the Macintosh OSX system you can install PostgreSQL from the Postgres.app package. Download this from https://postgresapp.com but make sure you choose PostgreSQL version 12 and the appropriate platform for your Mac. Once you have downloaded Postgres you can open the disk image from your Downloads folder. Drag the Postgres icon to the Applications folder.
@@ -244,5 +248,19 @@ keith=# alter database keith rename to cyf_hotel;
 Clearly, you'll use your own name as the name of the database to be renamed.
 
 Note that to exit psql back to the terminal prompt use the command `\q`.
-### MacOS Install Complete
+### MacOS Graphical Install Complete
 ---
+### MacOS Command Line Installation
+You need Homebrew installed on your Mac to use this approach. If you don't yet have it then you should probably use the graphical method. If you already have Homebrew installed then the following command installs PostgreSQL:
+```bash
+brew install postgresql
+```
+This will install the software, set up the postgres user and a user with the same name as your Mac OS user and create some databases. It should leave the PostgreSQL server running on your Mac but if you power off the machine you'll need to restart it. To restart the server, type:
+```bash
+brew services start postgresql
+```
+This starts the server and ensures that it will be started each time you power up your Mac. Note you can stop the server at any time by using:
+```bash
+brew services stop postgresql
+```
+
