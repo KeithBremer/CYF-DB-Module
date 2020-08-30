@@ -12,6 +12,7 @@ Read the Mentors Notes [here](./mentors.md)
 
 - Revision from last week
 - [Recap integration of cyf_hotel DB with NodeJS](#recap-integration-of-cyf_hotels-db-with-nodejs)
+- [Being More Selective](#being-more-selective)
 - [CRUD operations with NodeJS and PostgreSQL](#crud-operations-with-nodejs-and-postgresql)
   - [Creating data](#creating-data)
   - [Reading data](#reading-data)
@@ -113,7 +114,7 @@ In the above code notice that:
 
 In `db.query` you can use placeholders $1, $2, ... $9, $10, $11, ... etc to mark the place where a parameter value should be used. The parameters to replace the placeholders are supplied in the second argument, the array of values. In this case there is only one value (but it must still be put into an array) so we have `[custId]` as the replacement value for the first placeholder, `$1`. If there is more than one placeholder there must be the same number of array elements and they must be in the order of the placeholder numbers.
 
-#### String Placeholders
+### String Placeholders
 With String placeholders you don't put apostrophes around the placeholder:
 ```js
 app.get("/customers/by_city/:city", (req, res) => {
@@ -148,7 +149,7 @@ INSERT INTO customers (name, email, phone, address, city, postcode, country)
   VALUES ('Fred Bloggs', 'fred@bloggs.org', '07123456789', '1 Low Brow',
           'Ashbottom', 'XY2 3ZA', 'UK');
 ```
-#### Using body-parser for Form Data
+### Using body-parser for Form Data
 
 When an endpoint can reasonably expect a large number of data values, for example, when we need to insert a new row into the `customers` table, then using parameters in the URL is not practical. Instead we can use a 'middleware' package such as `body-parser`, which can extract data from the body of the request.
 
@@ -166,33 +167,33 @@ const bodyParser = require("body-parser");
 app.use(bodyParser.json());
 ```
 
-#### Inserting Rows Using Node.js
+### Inserting Rows Using Node.js
 We can finally add our new endpoint to create a new customer:
 
 ```js
 app.post("/customers", function (req, res) {
-  const newCustName = req.body.name;
-  const newCustEmail = req.body.email;
-  const newCustPhone = req.body.phone;
+  const newName = req.body.name;
+  const newEmail = req.body.email;
+  const newPhone = req.body.phone;
   ...
-  const newCustCountry = req.body.country;
+  const newCountry = req.body.country;
 
   const query =
     "INSERT INTO customers (name, email, phone, address, city, postcode, country) " +
       "VALUES ($1, $2, $3, $4, $5, $6, $7)";
 
-  db.query(query, [newCustName, newCustEmail, ..., newCustCountry], (err) => {
+  db.query(query, [newName, newEmail, ..., newCountry], (err) => {
     res.send("Customer created.");
   })
 });
 ```
-#### Using Postman to Test a POST
+### Using Postman to Test a POST
 In Postman:
 * Change the method to POST
 * Ensure the URL address is your customers endpoint, for example: http://localhost:3000/customers
 * Under the address in the Postman window select **Body** then select **raw**
 * Ensure that JSON is selected at the right hand end
-* Enter the data as JSON in the panel blow these settings, for example:
+* Enter the data as JSON in the panel below these settings, for example:
 ```json
 { "name": "Fred Bloggs",
   "email": "fred@bloggs.org",
@@ -202,7 +203,7 @@ In Postman:
 * Click send
 
 You should see the response "Customer created."
-#### Exercise 2
+### Exercise 2
 1.  Install body-parser and enable it in your server.js
 2.  Define a new endpoint to create new customer records<br>
 For simplicity, only insert the name, phone & email values. Invent your own values.
@@ -210,13 +211,13 @@ For simplicity, only insert the name, phone & email values. Invent your own valu
 4.  Test your endpoint using Postman
 5.  Check the data has appeared in the table
 
-#### What Can We Do After an Insert?
+### What Can We Do After an Insert?
 * We must start checking for errors in the executution of the SQL. This applies to all commands, not just INSERT.
 * If the table has an autoincrementing primary key we can obtain the value for the new row and return it to the browser. This is often required for subsequent actions in the use case.
 * The new data can be logged to the console (although this is not common practice).
 * ... and so forth ...
 
-#### Checking for Errors in SQL
+### Checking for Errors in SQL
 The callback function in `db.query` always has an error parameter as the first parameter, sometimes followed by a result parameter if the query is likely to return some data. If the SQL succeeds then the error parameter is `undefined` otherwise it is an error message.
 
 A typical situation might be:
@@ -247,8 +248,8 @@ What could go wrong with our code so far? There is no validation of any user inp
 Let's start by validating that phone number the consists of only digits, +, -, (, ) or space and if it doesn't, return an error. This check uses a regular expression to replace all valid characters with a '0' (zero) symbol then check the result is made up of only '0' symbols.
 
 ```js
-if (newCustPhone.replace(/[\+\-\(\)0-9 ]/g, '0') !=    // replace all valid chars with 0
-    '0'.padEnd(newCustPhone.length, '0')) {
+if (newCustPhone.replace(/[+\-()0-9 ]/g, '0') !=      // replace all valid chars with 0
+    '0'.padEnd(newCustPhone.length, '0')) {           // compare with all zeros same length as phone
   return res
     .status(400)
     .send("The phone number must only contain 0-9, +, -, (, ) or space.");
@@ -259,13 +260,13 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expression
 
 Note also that this validation can also be performed in the browser because it doesn't involve any database interaction. This is a faster and less costly (in terms of network traffic) approach and should be used where practical. It makes user correction of mistakes quicker and more natural and can be done on a per item basis.
 
-#### Exercise 3
+### Exercise 3
 1.  Modify your endpoint to check for SQL errors. If an error is encountered then console.log it and return it to the browser.
 2.  Add phone number validation to your endpoint to check that only digits, +, -, (, ) or space are present. Any other characters should send a suitable message back to the browser and abort the insert.<br>
 (*You may use copy & paste to get the regular expression - it's not easy to get right by hand.*)
 3.  Test your endpoint with a variety of data including valid and invalid phone numbers.
 
-#### Check the Customer's Email
+### Check the Customer's Email
 We can also validate the new customer's email doesn't already exist in the database, thus preventing duplicate data.
 
 ```js
@@ -278,7 +279,7 @@ app.post("/customers", function (req, res) {
   //
   // First validate the phone number using a regular expression to check for valid characters
   //
-  if (newPhone.replace(/\+\-\(\)0-9 /g, '0') ==    // replace all valid chars with 0
+  if (newPhone.replace(/[+\-()0-9 ]/g, '0') ==    // replace all valid chars with 0
       '0'.padEnd(newPhone.length, '0')) {
     return res
       .status(400)
@@ -312,7 +313,7 @@ Note:
 * That the INSERT is now executed as part of the callback of the query that returns a row if the same email already exists.
 * This validation is NOT suitable for performing in the browser because it interacts with the database.
 
-#### Exercise 4
+### Exercise 4
 
 1.  Before adding a new customer ensure there are none with the same email address in the customers table
 2.  If a duplicate email is found send an appropriate message to the browser
@@ -343,7 +344,7 @@ The endpoint now uses the query call shown below:
       };
     });
 ```
-#### Exercise 5
+### Exercise 5
 1.  Further extend your POST endpoint so that it returns the new customer id value to the browser.
 2.  Use Postman to check that the new value is returned.
 
@@ -375,7 +376,7 @@ We used URL parameters to query for a specific customer earlier and we used body
 
 What can go wrong in the code above? Again, there is no validation! The user could try to set an empty email or even a string which is not following the format of an email. **Remember, validating data is very important to make sure you don't end up with inconsistent data in your database!**
 
-#### Exercise 6
+### Exercise 6
 
 1.  Create a new endpoint to update reservations to provide the room number allocated to the guest when they check in. Use the reservation id value to identify the row.
 2.  Use Postman to check that the endpoint works correctly and the row is updated.
@@ -395,16 +396,16 @@ app.delete("/customers/:id", function (req, res) {
 });
 ```
 
-However, if you try to delete a customer which already has some bookings, the previous endpoint will fail. Do you know why? You cannot delete a customer whose ID is used as a foreign key in another table (in this case, in the `bookings` table). Let's delete all the customer bookings first:
+However, if you try to delete a customer which already has some bookings, the previous endpoint will fail. Do you know why? You cannot delete a customer whose ID is used as a foreign key in another table (in this case, in the `reservations` table). Let's delete all the customer bookings first:
 
 ```js
 app.delete("/customers/:customerId", function (req, res) {
   const customerId = req.params.customerId;
 
-  pool
-    .query("DELETE FROM bookings WHERE customer_id=$1", [customerId])
+  db
+    .query("DELETE FROM reservations WHERE cust_id=$1", [customerId])
     .then(() => {
-      pool
+      db
         .query("DELETE FROM customers WHERE id=$1", [customerId])
         .then(() => res.send(`Customer ${customerId} deleted!`))
         .catch((e) => console.error(e));
@@ -413,7 +414,7 @@ app.delete("/customers/:customerId", function (req, res) {
 });
 ```
 
-#### Exercise 7
+### Exercise 7
 
 1.  Add an endpoint to delete from the reservations table using the value of the id to choose the row to be removed. Only allow deletion of reservations with future checkin dates otherwise return an error.
 2.  Check the endpoint works correctly using Postman (use psql to verify the row has been deleted).
