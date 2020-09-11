@@ -173,7 +173,7 @@ Finally you must restart the PostgreSQL service so that the configuration change
 
 From here onwards you shouldn't need to switch to the postgres user again nor enter a password. You can get into the PostgreSQL command-line tool using just:
 ```
-    $ psql cyf_hotel
+C:\...> psql cyf_hotel
 ```
 This connects you to the database named cyf_hotel and connects as the same username as your Windows user.
 
