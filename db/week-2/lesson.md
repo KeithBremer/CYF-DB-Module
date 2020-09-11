@@ -291,7 +291,7 @@ SELECT r.cust_id, r.room_no, i.invoice_date, i.total
        invoices i ON (r.id = i.res_id);
 ```
 
-#### Notice:
+***Notice:***
 
 * The new keyword JOIN with ON (predicate)
 * Table aliases (`r` and `i`) used to qualify columns
