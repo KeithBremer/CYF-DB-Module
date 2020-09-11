@@ -200,15 +200,15 @@ app.post("/customers", function(req, res) {
           .status(400)
           .send("A customer with that email address already exists!");
       } else {
-        conn.query("INSERT INTO customers (name, email, phone) " +
-                "VALUES ($1, $2, $3) " +
-                "RETURNING id", [custName, custEmail, custPhone]);
+        result = await conn.query("INSERT INTO customers (name, email, phone) " +
+                          "VALUES ($1, $2, $3) " +
+                          "RETURNING id", [custName, custEmail, custPhone]);
         let newId = result.rows[0].id;
-        conn.release();
+        await conn.release();
         res.send(`New customer added with id = ${newId}.`);
       }
     } catch(err) {
-      conn.release();
+      await conn.release();
       res.status(500).json({error: err});
     }
   })();
