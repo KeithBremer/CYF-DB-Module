@@ -498,7 +498,7 @@ To give the cleaners access to the view use:
 ```sql
 GRANT SELECT ON rooms_to_clean TO cleaners;
 ```
-Here we have a role named `cleaners` to which all our cleaning staff belong. They do not need access to reservations.
+Here we have a role named `cleaners` to which all our cleaning staff belong. They do not need access to reservations. Granting read access to the view gives all members of the `cleaners` role access to the view for queries.
 
 ---
 
