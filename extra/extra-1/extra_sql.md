@@ -6,6 +6,8 @@ By the end of this lesson you should be able to:
 *   Undestand the purpose and use of locking to ensure consistent data
 *   Use constraints to ensure data validity and consistency
 *   Define indexes to improve query performance
+*   Define and use views to encapsulate queries
+*   Give other users access to your tables and views
 
 ---
 ## Subqueries
@@ -400,6 +402,9 @@ This is equivalent to defining a UNIQUE constraint in the table definition:
 
 Notice that you cannot (in PostgreSQL) and should not normally try to specify whether an index is to be used or not. Some SQL implementations provide a 'hint' mechanism that enables developers to suggest various preferences to the optimiser to solve a specific problem. These generally cause worse problems later as the data changes over time so should always be avoided. Most such problems are the result of poor database design.
 
+### Using EXPLAIN to Check Query Behaviour
+
+
 ### Exercise:
 1.  Create an index on the checkin date in the reservations table.
 2.  Create a unique index on the combined room_no and checkin_date columns in the reservations table. You can use any valid method to do this.
@@ -413,14 +418,20 @@ Discuss...
 ## Using Views to Encapsulate Queries and Control Access
 A View is a mechanism in SQL that stores a SELECT statement in the database definitions. The select statement can be executed by treating the view as though it is a table.
 
-To create a view you provide a name, optional replacement column names and the query that defines the view.  For example, to list customers from the USA we might have:
+To create a view you provide a name, optional replacement column names and the query that defines the view.  For example, to create a view of customers from the USA we might have:
 ```sql
 CREATE VIEW customers_usa (id, name, email, phone, address, city, zipcode) AS
   SELECT id, name, email, phone, address, city, postcode
     FROM customers
     WHERE country = 'USA';
 ```
-Views can be used for a variety of purposes. This could include encapsulating a complex query comprising multiple joins, subqueries, etc. so that it can be used by non-technical users for ad-hoc queries. They can also be used to give restricted access to data for certain users or roles within an organisation, limiting the columns and/or rows available.
+Views behave very much like tables for queries, so just use the name in the FROM clause along with other query clauses as required:
+```sql
+SELECT * FROM customers_usa WHERE zipcode LIKE '900%'
+  ORDER BY city, address;
+```
+
+Views can be used for a variety of purposes. This could include encapsulating a complex query comprising multiple joins, subqueries, etc. so that it can be used by non-technical users for ad-hoc queries. They can also be used to give restricted access to data for certain users or roles within an organisation, limiting the columns and/or rows available (See **Users, Roles and Access Control** below).
 
 Views are permanent definitions, created once and used as often as required. Views can be changed if necessary and dropped when no longer needed.
 
@@ -431,6 +442,10 @@ CREATE OR REPLACE VIEW name (columns...) AS
 ```
 The view definition must be completely replaced, you cannot change just one column.
 
+### Exercise: Views
+In the cyf_hotel database:
+1.  Define a view, reservations_n, that provides an alternative method of accessing the reservations table. It should have columns res_id, cust_id, room_no, checkin_date, nights_stay and no_guests and should present all the rows in reservations.
+2.  
 ## Users, Roles and Access Control
 We know from setting up the database that we can create users in PostgreSQL. We used the command `createuser` in the terminal to create our own user on the database system:
 ```
@@ -467,6 +482,26 @@ GRANT sales TO charlotte;
 GRANT manager TO ellie;
 ```
 
+### Using Views for Access Control
+When a user has access to a view they do not need access to the underlying tables. Only the creator of the view needs access to the tables on which the view is based.
+
+For example, if I need to give cleaners access to the reservations table but only to see when a room is scheduled to be checked out today with no details of customer id, no. of guests or booking date I could use:
+```sql
+CREATE VIEW rooms_to_clean (room_no, checkin_date, checkout_date) AS
+  SELECT room_no, checkin_date, checkout_date
+    FROM reservations
+    WHERE checkout_date = current_date;
+```
+The cleaners could query this view without access to the full reservations table but still see which rooms are being checked out today so are due for a full clean.
+
+To give the cleaners access to the view use:
+```sql
+GRANT SELECT ON rooms_to_clean TO cleaners;
+```
+Here we have a role named `cleaners` to which all our cleaning staff belong. They do not need access to reservations.
+
+---
+
 ## Lesson Summary
 In this lesson you have learned how to:
 
@@ -475,7 +510,7 @@ In this lesson you have learned how to:
 * Use locking to ensure consistent data
 * Define indexes to improve query performance
 * Define views as a means to encapsulate complex queries or to control access
-* Control 
+* Control access to tables, views and other objects
 
 ---
 ## Homework
