@@ -1,5 +1,6 @@
 # More Uses of Node.js for SQL
 
+
 ## Understanding Connections to PostgreSQL
 
 So far in the CYF course we have used the `db.query` method for executing SQL. By using `db.query` the server opens a new connection, executes the query then closes the connection. This is fine for a single SQL command but is inefficient or simply won't work for more complex situations that involve multiple SQL commands.
@@ -151,10 +152,69 @@ We can use the server.js that you wrote for the CYF DB Module or you can start w
 2.  Rewrite the `POST` endpoint for `/customers` that inserts new customer data so that it uses a single connection for both checking the email and inserting the new customer.
 3.  Create a new `PUT` endpoint for updating a customer's email address but include a check that the new email address doesn't exist in the customers table already.
 
-## Using async/await for Complex Database Activity
-We've only had fairly simple endpoints so far in our use of the database. A `GET` endpoint to return all or selected customers, a `POST` endpoint to insert a new customer, and so forth. In each of these there are only a few SQL commands, each of which involves a callback function. When the endpoint gets more complex with the number of SQL commands increasing then the corresponding callback functions can become very ugly and difficult to manage.
+## Understanding Synchronous and Asynchronous Computing
 
-One elegant and easy way to overcome this is to use the Javascript async/await capability. You may have used async/await in previous sessions but we can provide the basics again here. Remember that async/await uses promises but makes the code structure much simpler (more like a conventional programming language) by hiding the asynchronous parts. We also use the `try/catch` construct to handle errors, simplifying error handling too.
+### Synchronous vs Asynchronous
+In synchronous code each step completes fully before moving on to the next step. In JavaScript this is normal for operations that act only on memory and don't involve any input or output. For example:
+```js
+const limit = 1000;
+let step = 1;
+let total = 0;
+for (let i = 1; i <= limit; i += step) {
+  total += i;
+  step++;
+}
+```
+These synchronous operations effectively "block" the execution of subsequent steps until the operation is complete. For in-memory operations, such as manipulating variables, these operations are very fast so blocking is short-lived, lasting only micro-seconds. In any case, the requirements of an algorithm will usually require that preceding operations complete before subsequant operations can take place.
+
+For operations that involve some kind of input or output (for example, reading a file, sending a request over a network) the input/output (I/O) operations are normally processed asynchronously. These operations are much slower than in-memory actions, usually taking milli-seconds or longer to complete. The input/output operation simply adds a request to perform this operation onto a queue of operations. Following code continues to execute immediately after the request has been queued. For example:
+```js
+function my_callback(err, result) {
+  if (err == undefined) {
+    console.log("Result = ", result);     // process the result of the query in the callback function
+  }
+}
+
+db.query("SELECT * FROM rooms WHERE room_no = 123", my_callback(err, result));   // I/O operation queues request
+
+console.log("Query has been queued");     // executes immediately after db.query sends the request
+```
+This will result in the output:
+```
+Query has been queued
+Result = {...}
+```
+Notice that the message produced in the callback function will invariably appear after the message produced immediately after sending the query to the database.
+
+### Why Does JavaScript Prefer Asynchronous I/O?
+Firstly it's important to understand that JavaScript was originally developed as a language to be used in the browser environment. A user might initiate an action in the browser that takes some time then decide to cancel it. In order to activate another element (e.g. link, button,...) to perform the cancel operation the browser must respond to an event. It must not be blocked by an earlier operation that has not yet completed.
+
+Because JavaScript is "single-threaded", blocking the execution could potentially lock up the entire web page, hence the preference for asynchronous I/O.
+
+"But," you argue, "we are using node as a server, not in a web page". The trouble is that making the behaviour of node different from the browser would require a complete re-working of JavaScript, so we have to conform to the same rules. Even in the server environment we must use asynchronous I/O to prevent the whole server from becoming blocked.
+
+### How Does JavaScript Handle Queued Requests?
+This is a rather long and complicated story, but essentially it works a bit like the following:
+A looping process looks at the queue of requests:
+1.  If a request is ready on the queue, remove it from the quque (de-queue the request)
+2.  Assign the request to an available "non-blocking worker" thread
+3.  Go back to step 1
+
+The worker thread will then:
+1.  Process the request (e.g. send it to the database server)
+2.  Wait for the results from the request (e.g. rows from the database)
+3.  Add the results to another queue (results queue)
+4.  Signal completion of the request
+5.  Wait for another request
+
+When the completion signal is received JavaScript executes the callback function of the request-making call.
+
+This is a rather simplified and loosely described process but it captures the essential features.
+
+## Using async/await for Complex Database Activity
+We've only had fairly simple endpoints so far in our use of the database. A `GET` endpoint to return all or selected customers, a `POST` endpoint to insert a new customer, and so forth. In each of these there are only a few SQL commands, each of which involves a callback function. When the endpoint gets more complex with the number of SQL commands increasing then the corresponding callback functions can become very ugly and difficult to manage (known as "callback hell").
+
+One elegant and easy way to overcome this is to use the Javascript async/await capability. You may have used async/await in previous sessions but we can provide the basics again here. Remember that async/await uses promises but makes the code structure much simpler (more like a "conventional" programming language) by hiding the asynchronous parts. We also use the `try/catch` construct to handle errors, simplifying error handling too.
 
 First of all the `await` mechanism can only be used inside a function declared as `async`, so:
 ```js
@@ -172,7 +232,7 @@ app.post("/customer", (req, res) => {
 });
 ```
 Things to notice about the above:
-1.  The endpoint is just a normal endpoint - the endpoint address is not relevant
+1.  The endpoint is just a normal endpoint - the endpoint address is not important here
 2.  Enclose the entire async function expression in parentheses
 3.  Put an empty pair of parentheses after the enclosing ()'s
 ```js
@@ -188,14 +248,14 @@ app.post("/customers", function(req, res) {
   const custPhone = req.body.phone;
   ...
   
-  (async () => {
+  (async () => {      // Yes, we can use the arrow function notation
     try {
       let result;
 
       const conn = await db.connect();
       result = await conn.query("SELECT 1 FROM customers WHERE email=$1", [custEmail]);
       if (result.rowCount > 0) {
-        conn.release();
+        await conn.release();
         return res
           .status(400)
           .send("A customer with that email address already exists!");
@@ -227,8 +287,8 @@ Consider the situation when a customer checks in to our hotel and is assigned a 
 ```js
 app.put("/reservations/checkin/:id", function(req, res) {
   const resId = req.params.id;
-  const resRoomNo = req.body.room;
-  const resCheckout = req.body.checkout;  // customer can amend checkout date on arrival
+  const resRoomNo = req.body.room_no;
+  const resCheckout = req.body.checkout_date;  // customer can amend checkout date on arrival
 
   (async () => {
     try {
@@ -246,12 +306,12 @@ app.put("/reservations/checkin/:id", function(req, res) {
       await conn.query("INSERT INTO invoices (res_id, total)" +
                         " VALUES ($1, 0.0)", [resId]);
       await conn.query("COMMIT");
-      conn.release();
+      await conn.release();
       res.status(200).send("Checkin completed successfully");
     } catch(err) {
       if (conn != null) {
-        conn.query("ROLLBACK");
-        conn.release();
+        await conn.query("ROLLBACK");
+        await conn.release();
       }
       res.status(500).json({error: err});
     }
@@ -277,7 +337,32 @@ The second method also requires the browser to send extra data but this time onl
 
 The method you use will depend on a number of factors but most likely will be dictated by the coding standards of the organisation you work for.
 
-Below is an example, with comments in the code, based on method 1. for the reservation checkin process given above. This now requires a more complex JSON body - it must include both the assigned room no and the adjusted checkout date but also the data from the original query, for example:
+Below is an example, with comments in the code, based on method 1. for the reservation checkin process given above. The process is shown in full, from the initial query through the change process to the database transaction. Alongside this there is an example of what might occur if a second user attempts to change the same data.
+
+User A (the receptionist in our hotel) asks the customer for their name and issues a query via the endpoint `/customers/by_name/:name` to retrieve their details. They then query the reservations table to get the corresponding reservation for today's date. This query returns the reservation details as an array of matching rows (in this case only one row) as follows:
+```json
+[
+  {
+    "id": 43,
+    "cust_id": 104,
+    "checkin_date": "2020-05-13",
+    "checkout_date": "2020-06-19",
+    "room_no": null,
+    "no_guests": 2,
+    "booking_date": "2020-06-05"
+  }
+]
+The code that runs in user A's browser saves a copy of this data for use in the update request then populates the fields on the web page so that the user can check and update them.
+
+   Meanwhile user B has also queried this reservation and plans to change the number of guests to 1. User B receives the same JSON block as user A.
+
+User A checks the details with the customer and asks if there are any changes they would like. The customer asks if it would be possible to stay two more nights. The receptionist checks the room bookings and agrees the change. User A now makes the room allocation and updates the room number on the screen - nothing is sent to the database yet.
+
+   User B has changed the number of guests in the reservation but has not yet clicked Submit.
+
+User A now hits the Submit button. The code in the browser now collates all the required information, the changes and the results from the original query, into a JSON structure and sends the request to the server.
+
+This now requires a more complex JSON body - it must include both the assigned room no and the adjusted checkout date but also the unmodified data from the original query, for example:
 ```js
 {
   "original": {
@@ -290,18 +375,19 @@ Below is an example, with comments in the code, based on method 1. for the reser
                 "booking_date": "2020-06-05"
               },
   "changes":  {
-              "room": 309
+              "room_no": 309,
+              "checkout_date": "2020-06-21"
               }
 }
 ```
 
-Note that the JSON body now includes the results of the original query against the reservations table. We must check that the corresponding row (id = 43) still contains the same data (otherwise we can assume another user has changed it in the intervening period).
+Note that the JSON body now includes the results of the original query against the reservations table. We must check that the corresponding row (id = 43) still contains the same data (otherwise we can assume another user has changed it in the intervening period). Below is the endpoint we might use:
 
 ```js
 app.put("/reservations/checkin/:id", function(req, res) {
   const resId = req.params.id;
-  const resRoomNo = req.body.changes.room;    // NOTE: this now refers to req.body.changes.room
-  const resCheckout = req.body.changes.checkout;
+  const resRoomNo = req.body.changes.room_no;    // NOTE: this now refers to req.body.changes.room_no
+  const resCheckout = req.body.changes.checkout_date;
   
   //
   // Function to compare two objects for equality of properties
@@ -388,15 +474,19 @@ app.put("/reservations/checkin/:id", function(req, res) {
 });
 ```
 
-That is doing a lot more work than the previous version of our checkin routine so it's rather more code. It is, however, a much more robust piece of code and is able to cope with multi-user activity that could break the previous version.
+That is doing a lot more work than the previous version of our checkin routine so it's rather more code. It is, however, a much more robust piece of code and is able to cope with multi-user activity that could break the previous version. For example, user B now clicks the Submit button, sending back the same original data. When this is checked against the current state of the row it no longer matches (room_no and checkout_date differ), however, so user B receives the message:
+```
+Data modified by another user - please retry.
+```
+User B must restart their changes and resubmit if they still wish to make their change.
 
 Just to recap, the sequence of events is as follows:
 1.  The user queries to get the data they need to complete the checkin process (e.g. customer and reservation details)
 2.  The code in the browser saves the results of the query locally
 3.  The user spends time completing the checkin details
 4.  The user clicks the button to send the changes to the server, the browser also sends the original query results
-5.  The server issues a query against the reservations table to ensure no other user has changed that reservation while our user was working
-6.  If the results of the query at (6.) returns the same data as the original (sent by the browser) then we can continue with the update
+5.  The server issues a query using the `FOR UPDATE` option against the reservations table to ensure no other user has changed that reservation while our user was working. The row is locked.
+6.  If the results of the query at (5.) returns the same data as the original (from 1. - sent by the browser) then we can continue with the update
 7.  If the results are different then we abort the transaction and send a message to the user saying another user has changed the data
 
 
