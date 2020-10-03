@@ -354,11 +354,14 @@ User A (the receptionist in our hotel) asks the customer for their name and issu
 ]
 The code that runs in user A's browser saves a copy of this data for use in the update request then populates the fields on the web page so that the user can check and update them.
 
-   Meanwhile user B has also queried this reservation and plans to change the number of guests to 1. User B receives the same JSON block as user A.
+   Meanwhile user B has also queried this reservation and plans
+   to change the number of guests to 1. User B receives the same 
+   JSON block as user A.
 
 User A checks the details with the customer and asks if there are any changes they would like. The customer asks if it would be possible to stay two more nights. The receptionist checks the room bookings and agrees the change. User A now makes the room allocation and updates the room number on the screen - nothing is sent to the database yet.
 
-   User B has changed the number of guests in the reservation but has not yet clicked Submit.
+   User B has changed the number of guests in the reservation
+   but has not yet clicked Submit.
 
 User A now hits the Submit button. The code in the browser now collates all the required information, the changes and the results from the original query, into a JSON structure and sends the request to the server.
 
@@ -416,10 +419,12 @@ app.put("/reservations/checkin/:id", function(req, res) {
       const conn = await db.connect();
       await conn.query("BEGIN TRANSACTION");
       //
-      // Here we re-query the row to get the data to match against re.body.original. Notice that we
-      // use the FOR UPDATE option on the query to lock the row to prevent any further changes until
-      // we commit or rollback our transaction.
-      // If they are the same then proceed normally, otherwise return an error to the user
+      // Here we re-query the row to get the data to match against 
+      // req.body.original. Notice that we use the FOR UPDATE option
+      // on the query to lock the row to prevent any further changes
+      // until we commit or rollback our transaction.
+      // If they are the same then proceed normally, otherwise 
+      // return an error to the user
       //
       result = await conn.query(
           "SELECT cust_id, checkin_date, checkout_date, room_no, no_guests, booking_date" +
@@ -429,7 +434,8 @@ app.put("/reservations/checkin/:id", function(req, res) {
           [resId]
         ):
       //
-      // Now use the objEqual function to compare the row with the original
+      // Now use the objEqual function to compare the row with the 
+      // data in req.body.original
       //
       if (objEqual(result.rows[0], req.body.original)) {
         //
@@ -486,7 +492,7 @@ Just to recap, the sequence of events is as follows:
 3.  The user spends time completing the checkin details
 4.  The user clicks the button to send the changes to the server, the browser also sends the original query results
 5.  The server issues a query using the `FOR UPDATE` option against the reservations table to ensure no other user has changed that reservation while our user was working. The row is locked.
-6.  If the results of the query at (5.) returns the same data as the original (from 1. - sent by the browser) then we can continue with the update
+6.  If the results of the query at (5.) returns the same data as the original from (1.) - sent by the browser then we can continue with the update
 7.  If the results are different then we abort the transaction and send a message to the user saying another user has changed the data
 
 
