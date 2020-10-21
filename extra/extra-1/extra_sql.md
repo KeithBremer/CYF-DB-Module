@@ -2,6 +2,9 @@
 ## Objectives
 By the end of this lesson you should be able to:
 *   Use sub-queries to access multiple tables in a query
+*   Use the WITH clause to a define reusable subquery
+*   Use the SQL set operators UNION, INTERSECT and EXCEPT
+*   Use and deploy self-referencing foreign keys to represent hierarchies
 *   Understand the purpose and use of transactions
 *   Undestand the purpose and use of locking to ensure consistent data
 *   Use constraints to ensure data validity and consistency
@@ -13,23 +16,25 @@ By the end of this lesson you should be able to:
 ## Subqueries
 It is sometimes necessary to base the results of one query on what you get from another, for example, to find all customers from the same country as Mary Saveley:
 ```sql
-    SELECT country FROM customers
-      WHERE name = 'Mary Saveley';
-    ...
-    SELECT * FROM customers
-      WHERE country = <result from 1st query>;
+-- Query 1
+SELECT country FROM customers
+  WHERE name = 'Mary Saveley';
+...
+SELECT * FROM customers
+  WHERE country = <result from 1st query>;
 ```
-This is very clumsy, you have to retype the result of the first query in the second. It would be much better to have just one query that works for whatever name we provide!
+This is very clumsy, you have to retype the result of the first query in the second. It would be much better to have just one query that works for whatever customer name we provide!
 
 We can rewrite that as:
 ```sql
-    SELECT * FROM customers
-      WHERE country = (
-            SELECT country FROM customers
-              WHERE name = 'Mary Saveley');
+-- Query 2
+SELECT * FROM customers
+  WHERE country = (
+        SELECT country FROM customers
+          WHERE name = 'Mary Saveley');
 ```
 * Subqueries are always enclosed in parentheses (...).
-* The subquery provides the value for country required by the WHERE condition.
+* The subquery provides the value for country required by the outer query WHERE condition.
 * Notice that the subquery is written last but is executed first, as in the original two query solution.
 
 You can use a subquery on the right hand side (RHS) of a predicate, of the form:
@@ -42,66 +47,75 @@ This kind of subquery must return just a single result and in most cases just a 
 
 For example:
 ```sql
-    SELECT * FROM reservations
-      WHERE (checkout_date - checkin_date) > (
-          SELECT avg(checkout_date - checkin_date)
-            FROM reservations);
+-- Query 3
+SELECT * FROM reservations
+  WHERE (checkout_date - checkin_date) > (
+      SELECT avg(checkout_date - checkin_date)
+        FROM reservations);
 ```
 What question does this query answer? Remember that the inner query is executed first to provide a result to feed into the outer query.
 
 An example using the `IN` operator:
 ```sql
-    SELECT * FROM reservations
-      WHERE cust_id IN (SELECT id FROM customers WHERE country = 'Norway');
+-- Query 4
+SELECT * FROM reservations
+  WHERE cust_id IN (SELECT id FROM customers
+                      WHERE country = 'Norway');
 ```
 
 Subqueries can also be used to check for the existence (or non-existence) of rows in other tables by using the EXISTS or NOT EXISTS keywords, for example:
 ```sql
-    SELECT * FROM customers c
-      WHERE EXISTS (SELECT 1 FROM reservations r
-                          WHERE r.cust_id = c.id);
+-- Query 5
+SELECT * FROM customers c
+  WHERE EXISTS (SELECT 1 FROM reservations r
+                  WHERE r.cust_id = c.id);
 ```
-This example lists all customers who have at least one reservation.
+This example lists all customers who have at least one reservation. Note that the value (literal 1 in this case) returned by the subquery is not used, we are only interested in whether any row(s) exist. We could use any value or expression in that select list.
 
-It is also an example of a correlated subquery.
+This is also an example of a **correlated subquery**.
 
-Correlated subqueries use values from the outer query - in this case the subquery can't execute first, they must both execute together. Note the use of `r.cust_id = c.id`; `r.cust_id` is from the subquery but `c.id` comes from the outer query.
+### Correlated Subqueries
+Correlated subqueries use values from the outer query - so the subquery can't execute first, they must both execute together. Note the use of `r.cust_id = c.id`; `r.cust_id` is from the subquery but `c.id` comes from the outer query.
 
 For example:
 ```sql
-    SELECT c.name, c.country,
-           r.checkout_date - r.checkin_date as nights
-      FROM customers c
-      JOIN reservations r ON (r.cust_id = c.id)
-      WHERE r.checkout_date - r.checkin_date =
-            (SELECT max(y.checkout_date - y.checkin_date)
-              FROM customers x
-              JOIN reservations y ON (y.cust_id = x.id)
-              WHERE x.country = c.country);
+-- Query 6
+SELECT c.name, c.country,
+       r.checkout_date - r.checkin_date as nights
+  FROM customers c JOIN
+       reservations r ON (r.cust_id = c.id)
+  WHERE r.checkout_date - r.checkin_date =
+      (SELECT max(y.checkout_date - y.checkin_date)
+          FROM customers x JOIN
+               reservations y ON (y.cust_id = x.id)
+          WHERE x.country = c.country);
 ```
 Notice that the inner query is using the value of `c.country` from the outer query. Can you work out what question this query answers?
 
+### Use Subqueries for Columns or Tables
 You can use subqueries in many places where you would use a column name or a table name. For example:
 ```sql
-    SELECT name, email,
-           (SELECT count(*) FROM reservations r
-             WHERE r.cust_id = c.id) bookings_made
-      FROM customers c
-      WHERE country = 'USA';
+-- Query 7
+SELECT name, email,
+       (SELECT count(*) FROM reservations r
+          WHERE r.cust_id = c.id) AS bookings_made
+  FROM customers c
+  WHERE country = 'USA';
 ```
-Returns name, email and the number of reservations for all USA customers.
+Returns name, email and the number of reservations for each customer from the USA.
 
 This is another example of a "correlated subquery" when the subquery uses a value from the outer query (`c.id` in this case).
 
 You can use a subquery in place of a table (in postgreSQL you must always use a subquery alias for these). For example:
 ```sql
-    SELECT MAX(sumn) AS max_cust_nights
-      FROM (SELECT SUM(checkout_date - checkin_date) AS sumn
-              FROM reservations
-              GROUP BY cust_id
-           ) AS sub1;
+-- Query 8
+SELECT MAX(sumn) AS max_cust_nights
+  FROM (SELECT SUM(checkout_date - checkin_date) AS sumn
+          FROM reservations
+          GROUP BY cust_id
+       ) AS sub1;
 ```
-You can use this construct in a wide variety of contexts. One classic use is in SQL dialects that don't support nested aggregate functions you can use a subquery to find things like `MAX(SUM(expr))`.
+You can use this construct in a wide variety of contexts. One classic use is in SQL dialects (like PostgreSQL) that don't support nested aggregate functions, you can use a subquery to find things like `MAX(SUM(expr))`.
 
 ---
 
@@ -115,6 +129,150 @@ Hint - use the date_trunc function...
 5.  Bonus Question : List all the reservations for the month which has the largest number of reservations. (hint: nesting)
 
 ---
+## Using the WITH Clause
+In more complex SQL it is sometimes useful to declare a query that defines a "virtual table". These are called **Common Table Expressions** (CTE) and the virtual table it defines can be used as often as needed in the main query. A CTE exists only for the duration of the main query.
+
+For example, we could rewrite the query to find the customers from each country that stayed the most nights (see *Query 6* above) as follows:
+```sql
+-- Query 9
+WITH stays AS
+  (SELECT x.name, x.country, y.checkout_date - y.checkin_date AS nights
+     FROM customers x JOIN
+          reservations y ON (y.cust_id = x.id)
+  )
+  SELECT s.name, s.country, s.nights
+    FROM stays s
+    WHERE s.nights = (SELECT max(t.nights) 
+                        FROM stays t 
+                        WHERE t.country = s.country);
+```
+In this query the code:
+```sql
+-- Query 10
+WITH stays AS
+  (SELECT x.name, x.country, y.checkout_date - y.checkin_date AS nights
+     FROM customers x JOIN
+          reservations y ON (y.cust_id = x.id)
+  )
+```
+defines the CTE that is used in the main part of the query that returns rows:
+```sql
+  -- Query 11
+  SELECT s.name, s.country, s.nights
+    FROM stays s
+    WHERE s.nights = (SELECT max(t.nights) 
+                        FROM stays t 
+                        WHERE t.country = s.country);
+```
+Notice that the main query refers to `stays` to use the CTE and that the `WITH` clause specifies `stays` in `WITH stays AS ...` The query for the CTE is written in parentheses the same as a subquery (which is what it is).
+
+Although this query doesn't gain much from the WITH clause it can be very useful in more complex SQL.
+
+---
+## Using the Set Operators
+In SQL it is possible to combine the results of two (or more) separate queries using the set operators. These operations take the forms:
+```sql
+SELECT ... UNION SELECT ...;
+SELECT ... INTERSECT SELECT ...;
+SELECT ... EXCEPT SELECT ...;
+```
+In each case the results from the first SELECT are combined with the results of the second SELECT. The results of each query can be thought of as a ***set*** in the mathematical sense.
+
+![Set Operators](set-operators.png)
+
+The UNION operator returns rows that appear in either of the two sets but removes any duplicates.
+
+The INTERSECT operator returns rows that appear in both of the two sets, again removing duplicates.
+
+The EXCEPT operator returns rows that appear in the first set but not in the second set, removing duplicates. In some SQL dialects the keyword MINUS is used instead of EXCEPT (e.g. Oracle).
+
+For example, to find the names and emails of customers from the USA who have stayed on the 2nd floor and customers who have booked reservations in the past month we could use:
+```sql
+-- Query 13
+SELECT name, email FROM customers c
+  WHERE country = 'USA' AND
+        EXISTS (SELECT 1 FROM reservations r
+                  WHERE r.cust_id = c.id
+                    AND room_no between 200 AND 299)
+UNION
+SELECT name, email FROM customers c
+  WHERE EXISTS (
+    SELECT 1 FROM reservations r
+      WHERE r.cust_id = c.id
+        AND booking_date > current_date - INTERVAL '1 month')
+ORDER BY name;
+```
+Note that both queries must return the same number of values and their data types must match. Also note that any `ORDER BY` clause applies to the whole query (the result of the set operation) and must only appear at the end of the last query.
+
+To find the names and emails of customers who fall into both sets we just change the UNION operator to INTERSECT.
+
+Finally, if we don't wish to remove duplicate rows we can add the keyword `ALL` after the set operator so that, for example, `UNION` becomes `UNION ALL`.
+
+## Self-referencing Foreign Keys
+We've looked at foreign keys linking data in different tables but what happens if the thing I want to link is a row in the same table? There are many examples of this kind of connection: employees have managers who are also employees; cars are made up of components such as engines, steering, suspension, etc. that in turn are made up of smaller parts and so on.
+
+For example, an employees table could be as shown below:
+![Employees Example](employees.png)
+
+The organisation chart at the top shows the management structure. At the lower left is the representation in a table diagram and lower right is the table contents.
+
+The manager column is a foreign key referencing the employees table in which it is defined. The CREATE TABLE command might look something like this:
+```sql
+-- Query 14
+CREATE TABLE employees (
+  id              SERIAL PRIMARY KEY,
+  name            VARCHAR(40) NOT NULL,
+  manager         INTEGER,
+  etc...
+  FOREIGN KEY (manager) REFERENCES employees(id)
+);
+```
+You can use self-referencing foreign keys in any situation where you need to represent this kind of hierarchy.
+
+### Using SQL to Access the Hierarchy
+Many simple queries can be completed using normal SQL, for example, which employees are managed by M Ali?
+```sql
+-- Query 15
+SELECT * FROM employees
+  WHERE manager = (SELECT id FROM employees
+                     WHERE name = 'M Ali');
+```
+This only finds employees *directly* managed by M Ali, but not any employees managed by an employee who reports to M Ali. That kind of query requires recursion (which could be done in procedural code such as JavaScript but might be better done in SQL).
+
+We can use what is called a ***Recursive CTE*** to delve deeper into the hierarchy. The basic syntax of a recursive CTE is:
+```sql
+-- Query 16
+WITH RECURSIVE cte_name AS
+  (
+    <non-recursive query>
+    UNION
+    <recursive query>
+  )
+  SELECT * FROM cte_name;
+```
+The non-recursive query defines the fixed starting point for the query, for example: `SELECT * FROM employees WHERE id = 103`. This works as just a normal query.
+
+The recursive query defines how the query traverses the tree structure and, of course, is self-referencing (in a different way than foreign keys). The recursion comes in one half of the join, which uses the whole `WITH` query.
+
+To find all direct and indirect employees reporting to K Jones, for example, we use:
+```sql
+-- Query 17
+WITH RECURSIVE reports AS (
+  SELECT id, name, manager 
+    FROM employees WHERE name = 'K Jones'
+  UNION
+  SELECT e.id, e.name, e.manager
+    FROM employees e JOIN
+         reports r ON (r.id = e.manager)
+) SELECT * FROM reports;
+```
+The above query traverses the tree structure from the top (the boss) to the bottom returning all employees managed directly or indirectly by K Jones.
+
+To make the query work in the opposite direction, from the bottom to the top, first change the starting point (e.g. `WHERE name = 'T Ash'`) then reverse the join condition (e.g. `ON (e.id = r.manager)`).
+
+*Note:* In some dialects the keyword `RECURSIVE` is not used. In Oracle this operation can also be implemented differently using the `START WITH` and `CONNECT BY` clauses.
+
+---
 ## Transactions
 By default, PostgreSQL runs each INSERT, UPDATE or DELETE in its own transaction - it either succeeds or fails. But the ACID rules require us to be able to make several changes that either all succeed or all fail. To do this we use a transaction.
 
@@ -122,17 +280,20 @@ For example, in banking, a money transfer between accounts must debit the ‘fro
 
 Start a transaction using the command:
 ```sql
-    BEGIN TRANSACTION;
+-- Query 18
+BEGIN TRANSACTION;
 ```
 … then issue any number of SELECT, INSERT, UPDATE and/or DELETE commands
 
 End the transaction with either:
 ```sql
-    COMMIT;        -- make changes permanent
+-- Query 19
+COMMIT;        -- make changes permanent
 ```
 or:
 ```sql
-    ROLLBACK;    -- undo changes since last BEGIN
+-- Query 20
+ROLLBACK;    -- undo changes since last BEGIN
 ```
 In your code you can detect the status of each command and then roll back the changes if any part fails.  If all succeed then you just commit the changes and they become permanent in the database.
 
@@ -140,8 +301,8 @@ In your code you can detect the status of each command and then roll back the ch
 ### Exercise - Using Transactions
 1.  In the psql command line tool, issue the commands:
 ```sql
-    BEGIN TRANSACTION;
-    UPDATE reservations SET room_no = 310 WHERE id = 10;
+BEGIN TRANSACTION;
+UPDATE reservations SET room_no = 310 WHERE id = 10;
 ```
 Now open a new terminal session (leaving the first still open) and in psql do:
 ```sql
@@ -171,7 +332,7 @@ Now check what has happened in the second session. Why do you think that happene
 
 ---
 
-Transactions prevent other users (database sessions) from making changes to the same rows that have been changed in another transaction.  This is done using 'locks'.  Locks do not exist physically but are a software mechanism that can be used by code (e.g. the RDBMS) to ensure that multiple processes can work consistently and safely with the same data.
+Transactions prevent other users (database sessions) from making changes to the same rows that have been changed in another open transaction.  This is done using 'locks'.  Locks do not exist physically but are a software mechanism that can be used by code (e.g. the RDBMS) to ensure that multiple processes can work consistently and safely with the same data.
 
 PostgreSQL uses row locking by default for INSERT, UPDATE and DELETE, preventing other processes from changing rows that you have changed. If another change to a locked row is attempted while your transaction is active then that command waits until the lock is released, with either a `COMMIT` or a `ROLLBACK`.
 
@@ -193,7 +354,7 @@ power failure)
 ## Locking
 Databases use locking mechanisms to control concurrent activity to ensure it remains consistent and safe.
 
-Locking systems are beyond the scope of this course but for the moment you can imagine that when a computer process locks a resource then that resource has limited accessibility for other processes.
+Locking systems are beyond the scope of this course but for the moment you can assume that when a computer process locks a resource then that resource has limited accessibility for other processes.
 
 Locking prevents another user from breaking the changes you have made during a transaction. It is largely automatic, governed by the RDBMS.
 
@@ -212,6 +373,7 @@ Whenever you issue an INSERT, UPDATE or DELETE command the RDBMS locks the recor
 
 You can also lock rows explicitly during a query by using the `FOR UPDATE` clause:
 ```sql
+-- Query 21
 SELECT ... FROM customers
   WHERE id = 31
   FOR UPDATE;
@@ -248,6 +410,7 @@ In most DBs a lock conflict causes the second (and any subsequent) lock request 
 
 Some DBs provide a NOWAIT option on commands that take out locks such that the command ends immediately with an error if a conflict occurs. (mySQL, Oracle, PostgreSQL,...). For example:
 ```sql
+-- Query 22
 SELECT * FROM customers
   WHERE id = 31
   FOR UPDATE NOWAIT;
@@ -263,6 +426,7 @@ You can define different kinds of constraints on a table. We have already seen p
 
 Define a single column primary key:
 ```sql
+-- Query 23
 CREATE TABLE rooms
   room_no     INTEGER PRIMARY KEY,
   ...
@@ -270,6 +434,7 @@ CREATE TABLE rooms
 ```
 You can also define an autoincementing primary key (that has its value incremented each time a new row is inserted):
 ```sql
+-- Query 24
 CREATE TABLE reservations (
   id          SERIAL PRIMARY KEY,
   ...
@@ -277,10 +442,11 @@ CREATE TABLE reservations (
 ```
 Note that the SERIAL keyword is a pseudo-type and implies INTEGER. Use the `\d <table_name>` command to see the full implementation of SERIAL.
 
-Note aslo that `PRIMARY KEY` implies `NOT NULL`.
+Note also that `PRIMARY KEY` implies `NOT NULL`.
 
 If the primary key comprises multiple columns then the above method won't work. Instead we use a separate constraint definition, usually placed after all the column definitions, as follows:
 ```sql
+-- Query 25
 CREATE TABLE invoice_items (
   invoice_no      INTEGER NOT NULL,
   item_no         INTEGER NOT NULL,
@@ -296,6 +462,7 @@ Here the `PRIMARY KEY` keywords appear at the beginning of the constraint defini
 
 Note also that a part of a primary key can be a foreign key to another table (e.g. invoice_no). That constraint has also been defined separately, a convention that some people prefer. A separate constraint is, of course, required when the foreign key comprises multiple columns, as below:
 ```sql
+-- Query 26
 CREATE TABLE item_breakdown (
   ...
   FOREIGN KEY (invoice_no, item_no) REFERENCES invoice_items (invoice_no, item_no),
@@ -303,10 +470,11 @@ CREATE TABLE item_breakdown (
 );
 ```
 ### The UNIQUE constraint
-While the primary key provides unique identification of each row in a table, it may be that other columns hold data that must be unique across the table. To do this we use the `UNIQUE` constraint.
+While the primary key provides unique identification of each row in a table, it may be that other columns hold data that must be unique across the table. To do this we use the `UNIQUE` constraint. Unlike the `PRIMARY KEY` constraint, `UNIQUE` does not enforce `NOT NULL` on the column(s) and those columns can be NULL.
 
 For example, in the hotel customers table the email column may be designated as unique, as follows:
 ```sql
+-- Query 27
 CREATE TABLE customers (
   ...
   email       VARCHAR(120) NOT NULL UNIQUE,
@@ -317,6 +485,7 @@ The UNIQUE constraint automatically creates an index (just as the PRIMARY KEY co
 
 Where a combination of column values must be unique then the constraint must be defined separately, as follows:
 ```sql
+-- Query 28
 CREATE TABLE reservations (
   ...
   room_no       INTEGER,
@@ -333,13 +502,14 @@ The `NOT NULL` part of a column definition is also a constraint, ensuring that e
 
 You can also provide custom checks on column values to ensure further compliance with business requirements. For example, it could be beneficial to ensure that data entered for checkin date and checkout date in a reservation are chronologically sensible. We use a `CHECK` constraint for this purpose:
 ```sql
+-- Query 29
 CREATE TABLE reservations (
   ...
   CHECK (checkin_date <= checkout_date),
   ...
 );
 ```
-Check constraints can only refer to columns in the row being inserted/updated and literal values. You cannot use subquries nor function values that could return different data on different occasions (e.g. current_date). Check constraints must always give a TRUE answer for the lifetime of the row.
+Check constraints can only refer to columns in the row being inserted/updated and literal values. You cannot use subqueries nor function values that could return different data on different occasions (e.g. current_date). Check constraints must always give a TRUE answer for the lifetime of the row.
 
 You can use any of the SQL conditional operators `=`, `<`, `>`, `<=`, `>=`, `!=`, `IN (...)`, `BETWEEN x AND y` or `LIKE...`. Compound conditions linked with `AND` and `OR` are allowed.
 
@@ -372,39 +542,105 @@ Do be aware, however, that there are also costs in providing indexes. Each index
 
 To create an index on a table we use the `CREATE INDEX` command:
 ```sql
+-- Query 30
 CREATE INDEX res_cust_id ON reservations(cust_id);
 ```
 This index could be used to resolve queries that include:
 ```sql
-  SELECT ... FROM reservations ... WHERE cust_id = 1234 ...
+-- Query 31
+SELECT ... FROM reservations ... WHERE cust_id = 1234 ...
 ```
 or
 ```sql
-  SELECT ... FROM reservations ... WHERE cust_id BETWEEN 1234 AND 1245 ...
+-- Query 32
+SELECT ... FROM reservations ... WHERE cust_id BETWEEN 1234 AND 1245 ...
 ```
 It's less likely to be used for a query that has:
 ```sql
-  SELECT ... FROM reservations ... WHERE cust_id < 1234 ...
+-- Query 33
+SELECT ... FROM reservations ... WHERE cust_id < 1234 ...
 ```
 because the less than operator could generally refer to a large number of rows and lead the optimiser to prefer a full table scan.
 
 You can define an index on multiple columns and this could be used when any leading part of the index is specified in the `WHERE` conditions. For example:
 ```sql
+-- Query 34
 CREATE INDEX res_cust_checkin ON reservations (cust_id, checkin_date);
 ```
 This index could be used when a query specifies `WHERE cust_id = 1234 AND checkin_date = '2020-06-12'` or when the query specifies only `WHERE cust_id = 1234`. It is not likely to be used if the where condition only specifies `WHERE checkin_date = '2020-06-12'`. Note also that this new index makes the previous one on `cust_id` alone fairly redundant.
 
-You can define a unique index that enforces uniqueness in the indexed coumn(s). For example:
+You can define a unique index that enforces uniqueness in the indexed column(s). For example:
 ```sql
+-- Query 35
 CREATE UNIQUE INDEX cust_email ON customers(email);
 ```
 This is equivalent to defining a UNIQUE constraint in the table definition:
+```sql
+-- Query 36
+CREATE TABLE customers (
+  ...
+  email         VARCHAR(120) NOT NULL UNIQUE,
+  ... 
+);
+```
 
 Notice that you cannot (in PostgreSQL) and should not normally try to specify whether an index is to be used or not. Some SQL implementations provide a 'hint' mechanism that enables developers to suggest various preferences to the optimiser to solve a specific problem. These generally cause worse problems later as the data changes over time so should always be avoided. Most such problems are the result of poor database design.
 
 ### Using EXPLAIN to Check Query Behaviour
+To determine whether a query will use an index or not you can use the `EXPLAIN` command. First, however, it's important to realise that this will only work on significant volumes of data. Tables with less that a few thousand rows will probably never use any index.
 
+To demonstrate this feature, therefore, we can use a database of UK house sales over the past few decades, amounting to about 25 million rows. To scan this entire table (on a small laptop) takes a very long time (in computing terms), almost four minutes.
 
+To get timing information on the execution of any SQL command in `psql` use the backslash command `\timing on`. Subsequent SQL commands will display their results followed by a line like:
+```
+Time: 235149.214 ms (03:55.149)
+```
+This is after a full scan of the uk_landreg_ppd table described above.
+
+The EXPLAIN command for the above is:
+```sql
+-- Query 37
+EXPLAIN SELECT COUNT(saon) FROM uk_landreg_ppd;
+                                             QUERY PLAN                                              
+-----------------------------------------------------------------------------------------------------
+ Finalize Aggregate  (cost=662571.62..662571.63 rows=1 width=8)
+   ->  Gather  (cost=662571.41..662571.61 rows=2 width=8)
+         Workers Planned: 2
+         ->  Partial Aggregate  (cost=661571.41..661571.42 rows=1 width=8)
+               ->  Parallel Seq Scan on uk_landreg_ppd  (cost=0.00..635415.53 rows=10462352 width=1)
+ JIT:
+   Functions: 6
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+(8 rows)
+```
+Far from being a simple execution plan, even a query that can't use an index gets some optimisation. In this case the line `Workers Planned: 2` shows that it will be resolved in two parallel processes.
+
+In contrast, a query that can use an index, such as:
+```sql
+-- Query 38
+EXPLAIN SELECT * FROM uk_landreg_ppd WHERE postcode = 'M21 8UP';
+
+                                       QUERY PLAN                                       
+----------------------------------------------------------------------------------------
+ Index Scan using ppd_postcode on uk_landreg_ppd  (cost=0.56..181.33 rows=44 width=124)
+   Index Cond: ((postcode)::text = 'M21 8UP'::text)
+(2 rows)
+```
+This has simpler output and indicates that an index (on the postcode column) can be used. The actual query executes in about 12 milliseconds (rather faster than a full table scan).
+
+If you try to use EXPLAIN with any queries in the hotel database you'll find that it always chooses a table scan (from beginning to end looking at each row) because the tables are very small. For example:
+```sql
+-- Query 39
+EXPLAIN SELECT * FROM customers WHERE id = 32;
+                        QUERY PLAN                        
+----------------------------------------------------------
+ Seq Scan on customers  (cost=0.00..4.66 rows=1 width=94)
+   Filter: (id = 32)
+(2 rows)
+```
+In the above query we are selecting on the primary key (`WHERE id = 32`) which always has an index but the index is ignored.
+
+---
 ### Exercise:
 1.  Create an index on the checkin date in the reservations table.
 2.  Create a unique index on the combined room_no and checkin_date columns in the reservations table. You can use any valid method to do this.
