@@ -1,5 +1,77 @@
 # More Uses of Node.js for SQL
 
+## Node and PostgreSQL Authentication
+
+So far we have used a very insecure method to log on to our database server. All the connection an login details have bee stored in plain text in the code of our server.js file. If we use a service such as github to manage our code then the details are open to the entire internet.
+```js
+const db = new Pool({
+  user: "keith",
+  host: "localhost",
+  database: "cyf_hotel",
+  password: "?????",
+  port: 5432,
+});
+```
+There are other ways to accomplish the same connection but without making the details public.
+
+### Separate the PostgreSQL Authorisation Details
+
+In this approach you put the database connection information into a separate file and include it into your server.js:
+```js
+// credentials.js
+const credentials = {
+  user: "keith",
+  host: "localhost",
+  database: "cyf_hotel",
+  password: "?????",
+  port: 5432
+};
+module.exports = credentials;
+```
+Then, in server.js you can include the `credentials.js` file and use the details to define your `db` Pool:
+```js
+// server.js
+...
+const credentials = require('./credentials.js');
+
+const db = new Pool(credentials);
+...
+```
+The next very important thing to do is ensure that your `credentials.js` file is not included in your source control system, e.g. add it to your `.gitignore` file so that it does not get versioned and pushed to github.
+
+### Use Sytem Environmemt Variables
+
+Another approach is to provide all the database connection and authorisation details via environment variables. Since these are done differently on different platforms we provide only the Linux/Unix style for achieving this.
+```bash
+export PGUSER=keith \
+    PGHOST=localhost \
+    PGDATABASE=cyf_hotel \
+    PGPASSWORD=????? \
+    PGPORT=5432 \
+    node server.js
+```
+Note: This is a single command and could be typed on one line (without the continuation character `\`).
+
+The node-postgres package will automatically use the environment variables to provide the connection details. In `server.js` you now just use:
+```js
+const db = new Pool();
+```
+Even this approach has some security issues because some operating systems allow other users to see your environment variables. To ensure that the password is completely secure you should use the `.pgpass` file in your home directory (or, on Windows, `%APPDATA%\postgresql\pgpass.conf`).
+
+This file has contents formatted as:
+```
+# Password file formatted as:
+# hostname:port:database:username:password
+#
+localhost:5432:cyf_hotel:keith:mysecretpassword
+*:*:*:postgres:pgsuperpass
+```
+This file is matched, line by line, with the host, port, database and user used by the connection until a match is found. The password from that line is used. Note that `*` is a wildcard and matches anything and can be used in the any of the first four fields.
+
+When using this file:
+* You should not provide the PGPASSWORD environment variable
+* The file must only be readable by you - on *nix use `chmod 0600 .pgpass`
+* You can override the file name using the PGPASSFILE environment variable
 
 ## Understanding Connections to PostgreSQL
 
@@ -15,13 +87,8 @@ const app = express();
 
 const Pool = require("pg").Pool;
 
-const db = new Pool({
-  user: "keith",
-  host: "localhost",
-  database: "cyf_hotel",
-  password: "?????",
-  port: 5432,
-});
+const db = new Pool();    // Assuming use of environment variables for authorisation
+
 
 app.use(bodyParser.json());
 ```
@@ -53,7 +120,7 @@ app.post("/customers", function (req, res) {
     "SELECT 1 FROM customers WHERE email=$1",
     [custEmail],
     (err, result) => {
-      if (result.rowCount > 0) {
+      if (result.rows.length > 0) {
         //
         // The email already exists in the table so return an error
         //
@@ -165,13 +232,14 @@ for (let i = 1; i <= limit; i += step) {
   step++;
 }
 ```
-These synchronous operations effectively "block" the execution of subsequent steps until the operation is complete. For in-memory operations, such as manipulating variables, these operations are very fast so blocking is short-lived, lasting only micro-seconds. In any case, the requirements of an algorithm will usually require that preceding operations complete before subsequant operations can take place.
+These synchronous operations effectively "block" the execution of subsequent steps until the operation is complete. For in-memory operations, such as manipulating variables, these operations are very fast so blocking is short-lived, lasting only micro-seconds. In any case, the requirements of an algorithm will usually require that preceding operations complete before subsequent operations can take place.
 
 For operations that involve some kind of input or output (for example, reading a file, sending a request over a network) the input/output (I/O) operations are normally processed asynchronously. These operations are much slower than in-memory actions, usually taking milli-seconds or longer to complete. The input/output operation simply adds a request to perform this operation onto a queue of operations. Following code continues to execute immediately after the request has been queued. For example:
 ```js
 function my_callback(err, result) {
   if (err == undefined) {
-    console.log("Result = ", result);     // process the result of the query in the callback function
+    console.log("Result = ", result);     // process the result of the query 
+                                          // in the callback function
   }
 }
 
@@ -203,11 +271,12 @@ A looping process looks at the queue of requests:
 The worker thread will then:
 1.  Process the request (e.g. send it to the database server)
 2.  Wait for the results from the request (e.g. rows from the database)
+    * (Note the worker thread IS blocked until the results arrive)
 3.  Add the results to another queue (results queue)
 4.  Signal completion of the request
 5.  Wait for another request
 
-When the completion signal is received JavaScript executes the callback function of the request-making call.
+When the completion signal is received JavaScript executes the callback function of the request-making call and returns the results from the queue.
 
 This is a rather simplified and loosely described process but it captures the essential features.
 
@@ -281,7 +350,7 @@ If you compare the above with the callback version of the same thing you'll noti
 The above example involves just two SQL commands and doesn't require a transaction as it just performs a simple INSERT. In more complex cases where several tables need changes then transactions can be used and are often essential to avoid inconsistencies.
 
 ## Transactions in Node
-In order to use a transaction in Node we must use  `BEGIN TRANSACTION`, the insert/update/delete commands and the `COMMIT` or `ROLLBACK` to terminate it, at least four SQL commands in all. We must also use a single connection for all these so must use the above scheme of working.
+In order to use a transaction in Node we must use  `BEGIN TRANSACTION`, the insert/update/delete commands and the `COMMIT` or `ROLLBACK` to terminate it, at least three SQL commands in all but usually rather more. We must also use a single connection for all these so must use the above scheme of working.
 
 Consider the situation when a customer checks in to our hotel and is assigned a room and has their room billing initialised by creating an invoice. The customer can optionally request a change to their checkout date at the same time. This requires an update to the reservation and the insert of an invoice record. We can do this as follows:
 ```js
@@ -408,8 +477,8 @@ app.put("/reservations/checkin/:id", function(req, res) {
   }
 
   //
-  // Here is the main part of the endpoint code - checking the original data is unchanged then 
-  // applying the changes.
+  // Here is the main part of the endpoint code - checking the original 
+  // data is unchanged then applying the changes.
   //
 
   (async () => {
@@ -495,4 +564,35 @@ Just to recap, the sequence of events is as follows:
 6.  If the results of the query at (5.) returns the same data as the original from (1.) - sent by the browser then we can continue with the update
 7.  If the results are different then we abort the transaction and send a message to the user saying another user has changed the data
 
+The endpoint above uses an IIFE (Immediately Invoked Function Expression) to establish an "async" environment in which to use the "await" calls. Another way to use `async` is in the endpoint callback (possibly more appropriately considered an event-handler).
+
+The endpoint would then start as follows:
+```js
+app.put("/reservations/checkin/:id", async function(req, res) {
+  ...
+```
+Note the use of `async` before the callback function. This can also use an arrow function, written as:
+```js
+app.put("/reservations/checkin/:id", async (req, res) => {
+```
+The rest of the code, excluding the IIFE, would remain the same. Here is the relevant part at the start of what was the IIFE (which has been commented out):
+```js
+  //
+  // Here is the main part of the endpoint code - checking the original 
+  // data is unchanged then applying the changes.
+  //
+
+//  (async () => {    // This was the IIFE to allow use of await
+    try {
+      let result;
+      ...
+```
+then the end of the IIFE is also removed:
+```js
+      res.status(500).json({error: err});
+    }
+//  })();             // The end of the IIFE commented out
+});
+```
+All the other code remains the same and the endpoint works as before.
 
