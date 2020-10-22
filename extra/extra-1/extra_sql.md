@@ -1,6 +1,7 @@
 # More SQL
 ## Objectives
 By the end of this lesson you should be able to:
+*   Understand and use OUTER joins and CROSS joins
 *   Use sub-queries to access multiple tables in a query
 *   Use the WITH clause to a define reusable subquery
 *   Use the SQL set operators UNION, INTERSECT and EXCEPT
@@ -13,10 +14,139 @@ By the end of this lesson you should be able to:
 *   Give other users access to your tables and views
 
 ---
+## Other Types of Join
+So far, in the original course, we looked at INNER joins. These are the most common types of join in any relational database system. With an INNER join rows must be matched on each side of the join in order to appear in the result.
+
+There are a few other types, however.
+
+### OUTER joins
+An outer join can include rows from either side of the join that don't match anything on the other side. This is best illustrated by a simple example:
+
+table_1
+| colx | coly |
+|------|------|
+| AAA | Fred |
+| BBB | Jenny |
+| CCC | Sue |
+|  |  |
+
+table_2
+| cola | colb | colc |
+|------|------|------|
+| 001 | BBB | 23.20 |
+| 002 | CCC | 45.00 |
+| 003 | CCC | 15.90 |
+| 004 | DDD | 256.10 |
+|  |  |  |
+
+In the join:
+```sql
+-- Query 1
+SELECT a.colx, a.coly, b.cola, b.colc
+  FROM table_1 AS a JOIN
+       table_2 AS b ON (a.colx = b.colb);
+```
+the results are:
+```
+ colx | coly  | cola |   colc
+ -----+-------+------+--------
+ BBB  | Jenny | 001  |  23.20
+ CCC  | Sue   | 002  |  45.00
+ CCC  | Sue   | 003  |  15.90
+```
+The result doesn't show the row `AAA | Fred` nor `004 | DDD | 256.10`.
+
+There are some situations where you want to get all the rows from one side or other of the join. To do this we can use an OUTER join. Outer joins can choose from either the left or right side of the join to get unmatched rows. For example, to get the row `AAA | Fred` we can use:
+```sql
+-- Query 2
+SELECT a.colx, a.coly, b.cola, b.colc
+  FROM table_1 AS a LEFT OUTER JOIN
+       table_2 AS b ON (a.colx = b.colb);
+```
+The results from this query are:
+```
+ colx | coly  | cola |   colc
+ -----+-------+------+--------
+ AAA  | Fred  |      |
+ BBB  | Jenny | 001  |  23.20
+ CCC  | Sue   | 002  |  45.00
+ CCC  | Sue   | 003  |  15.90
+```
+Note that the columns from the unmatched row are NULL values.
+
+Alternatively we can choose the right hand table to return the full set of rows:
+```sql
+-- Query 3
+SELECT a.colx, a.coly, b.cola, b.colc
+  FROM table_1 AS a RIGHT OUTER JOIN
+       table_2 AS b ON (a.colx = b.colb);
+```
+which results in:
+```
+ colx | coly  | cola |   colc
+ -----+-------+------+--------
+ BBB  | Jenny | 001  |  23.20
+ CCC  | Sue   | 002  |  45.00
+ CCC  | Sue   | 003  |  15.90
+      |       | 004  | 256.10
+```
+You can also use a FULL OUTER join to get non-matching results from both sides of the join, as follows:
+```sql
+-- Query 4
+SELECT a.colx, a.coly, b.cola, b.colc
+  FROM table_1 AS a FULL OUTER JOIN
+       table_2 AS b ON (a.colx = b.colb);
+```
+with results:
+```
+ colx | coly  | cola |   colc
+ -----+-------+------+--------
+ AAA  | Fred  |      |
+ BBB  | Jenny | 001  |  23.20
+ CCC  | Sue   | 002  |  45.00
+ CCC  | Sue   | 003  |  15.90
+      |       | 004  | 256.10
+```
+Note that the order of rows in these results is not guaranteed.
+
+Remember that the keyword INNER is optional (and in most cases is not used).
+
+### CROSS Joins
+This type of join is very rare in intentional queries - but does happen by accident in some cases. This join matches each row in one set with each row in the other set.
+
+Using our same example tables as above, a deliberate CROSS JOIN would be written as:
+```sql
+-- Query 5
+SELECT a.colx, a.coly, b.cola, b.colc
+  FROM table_1 AS a CROSS JOIN
+       table_2 AS b ON (a.colx = b.colb);
+```
+and the results would be:
+```
+ colx | coly  | cola |   colc
+ -----+-------+------+--------
+ AAA  | Fred  | 001  |  23.20
+ AAA  | Fred  | 002  |  45.00
+ AAA  | Fred  | 003  |  15.90
+ AAA  | Fred  | 004  | 256.10
+ BBB  | Jenny | 001  |  23.20
+ BBB  | Jenny | 002  |  45.00
+ BBB  | Jenny | 003  |  15.90
+ BBB  | Jenny | 004  | 256.10
+ CCC  | Sue   | 001  |  23.20
+ CCC  | Sue   | 002  |  45.00
+ CCC  | Sue   | 003  |  15.90
+ CCC  | Sue   | 004  | 256.10
+```
+This result set is called a "Cartesian Product" and is not normally of any practical use in a well-designed database.
+
+It can be useful in some cases to generate a large number of rows if you need to run performance tests against realistic data volumes. Remember you need some way to differentiate rows realistically as well.
+
+---
 ## Subqueries
 It is sometimes necessary to base the results of one query on what you get from another, for example, to find all customers from the same country as Mary Saveley:
 ```sql
--- Query 1
+-- Query 6
 SELECT country FROM customers
   WHERE name = 'Mary Saveley';
 ...
@@ -27,7 +157,7 @@ This is very clumsy, you have to retype the result of the first query in the sec
 
 We can rewrite that as:
 ```sql
--- Query 2
+-- Query 7
 SELECT * FROM customers
   WHERE country = (
         SELECT country FROM customers
@@ -47,7 +177,7 @@ This kind of subquery must return just a single result and in most cases just a 
 
 For example:
 ```sql
--- Query 3
+-- Query 8
 SELECT * FROM reservations
   WHERE (checkout_date - checkin_date) > (
       SELECT avg(checkout_date - checkin_date)
@@ -57,7 +187,7 @@ What question does this query answer? Remember that the inner query is executed 
 
 An example using the `IN` operator:
 ```sql
--- Query 4
+-- Query 9
 SELECT * FROM reservations
   WHERE cust_id IN (SELECT id FROM customers
                       WHERE country = 'Norway');
@@ -65,7 +195,7 @@ SELECT * FROM reservations
 
 Subqueries can also be used to check for the existence (or non-existence) of rows in other tables by using the EXISTS or NOT EXISTS keywords, for example:
 ```sql
--- Query 5
+-- Query 10
 SELECT * FROM customers c
   WHERE EXISTS (SELECT 1 FROM reservations r
                   WHERE r.cust_id = c.id);
@@ -79,7 +209,7 @@ Correlated subqueries use values from the outer query - so the subquery can't ex
 
 For example:
 ```sql
--- Query 6
+-- Query 11
 SELECT c.name, c.country,
        r.checkout_date - r.checkin_date as nights
   FROM customers c JOIN
@@ -95,7 +225,7 @@ Notice that the inner query is using the value of `c.country` from the outer que
 ### Use Subqueries for Columns or Tables
 You can use subqueries in many places where you would use a column name or a table name. For example:
 ```sql
--- Query 7
+-- Query 12
 SELECT name, email,
        (SELECT count(*) FROM reservations r
           WHERE r.cust_id = c.id) AS bookings_made
@@ -108,7 +238,7 @@ This is another example of a "correlated subquery" when the subquery uses a valu
 
 You can use a subquery in place of a table (in postgreSQL you must always use a subquery alias for these). For example:
 ```sql
--- Query 8
+-- Query 13
 SELECT MAX(sumn) AS max_cust_nights
   FROM (SELECT SUM(checkout_date - checkin_date) AS sumn
           FROM reservations
@@ -132,9 +262,9 @@ Hint - use the date_trunc function...
 ## Using the WITH Clause
 In more complex SQL it is sometimes useful to declare a query that defines a "virtual table". These are called **Common Table Expressions** (CTE) and the virtual table it defines can be used as often as needed in the main query. A CTE exists only for the duration of the main query.
 
-For example, we could rewrite the query to find the customers from each country that stayed the most nights (see *Query 6* above) as follows:
+For example, we could rewrite the query to find the customers from each country that stayed the most nights (see *Query 11* above) as follows:
 ```sql
--- Query 9
+-- Query 14
 WITH stays AS
   (SELECT x.name, x.country, y.checkout_date - y.checkin_date AS nights
      FROM customers x JOIN
@@ -148,7 +278,7 @@ WITH stays AS
 ```
 In this query the code:
 ```sql
--- Query 10
+-- Query 15
 WITH stays AS
   (SELECT x.name, x.country, y.checkout_date - y.checkin_date AS nights
      FROM customers x JOIN
@@ -157,7 +287,7 @@ WITH stays AS
 ```
 defines the CTE that is used in the main part of the query that returns rows:
 ```sql
-  -- Query 11
+  -- Query 16
   SELECT s.name, s.country, s.nights
     FROM stays s
     WHERE s.nights = (SELECT max(t.nights) 
@@ -188,7 +318,7 @@ The EXCEPT operator returns rows that appear in the first set but not in the sec
 
 For example, to find the names and emails of customers from the USA who have stayed on the 2nd floor and customers who have booked reservations in the past month we could use:
 ```sql
--- Query 13
+-- Query 17
 SELECT name, email FROM customers c
   WHERE country = 'USA' AND
         EXISTS (SELECT 1 FROM reservations r
@@ -218,7 +348,7 @@ The organisation chart at the top shows the management structure. At the lower l
 
 The manager column is a foreign key referencing the employees table in which it is defined. The CREATE TABLE command might look something like this:
 ```sql
--- Query 14
+-- Query 18
 CREATE TABLE employees (
   id              SERIAL PRIMARY KEY,
   name            VARCHAR(40) NOT NULL,
@@ -232,7 +362,7 @@ You can use self-referencing foreign keys in any situation where you need to rep
 ### Using SQL to Access the Hierarchy
 Many simple queries can be completed using normal SQL, for example, which employees are managed by M Ali?
 ```sql
--- Query 15
+-- Query 19
 SELECT * FROM employees
   WHERE manager = (SELECT id FROM employees
                      WHERE name = 'M Ali');
@@ -241,7 +371,7 @@ This only finds employees *directly* managed by M Ali, but not any employees man
 
 We can use what is called a ***Recursive CTE*** to delve deeper into the hierarchy. The basic syntax of a recursive CTE is:
 ```sql
--- Query 16
+-- Query 20
 WITH RECURSIVE cte_name AS
   (
     <non-recursive query>
@@ -256,7 +386,7 @@ The recursive query defines how the query traverses the tree structure and, of c
 
 To find all direct and indirect employees reporting to K Jones, for example, we use:
 ```sql
--- Query 17
+-- Query 21
 WITH RECURSIVE reports AS (
   SELECT id, name, manager 
     FROM employees WHERE name = 'K Jones'
@@ -280,19 +410,19 @@ For example, in banking, a money transfer between accounts must debit the ‘fro
 
 Start a transaction using the command:
 ```sql
--- Query 18
+-- Query 22
 BEGIN TRANSACTION;
 ```
 … then issue any number of SELECT, INSERT, UPDATE and/or DELETE commands
 
 End the transaction with either:
 ```sql
--- Query 19
+-- Query 23
 COMMIT;        -- make changes permanent
 ```
 or:
 ```sql
--- Query 20
+-- Query 24
 ROLLBACK;    -- undo changes since last BEGIN
 ```
 In your code you can detect the status of each command and then roll back the changes if any part fails.  If all succeed then you just commit the changes and they become permanent in the database.
@@ -373,7 +503,7 @@ Whenever you issue an INSERT, UPDATE or DELETE command the RDBMS locks the recor
 
 You can also lock rows explicitly during a query by using the `FOR UPDATE` clause:
 ```sql
--- Query 21
+-- Query 25
 SELECT ... FROM customers
   WHERE id = 31
   FOR UPDATE;
@@ -410,7 +540,7 @@ In most DBs a lock conflict causes the second (and any subsequent) lock request 
 
 Some DBs provide a NOWAIT option on commands that take out locks such that the command ends immediately with an error if a conflict occurs. (mySQL, Oracle, PostgreSQL,...). For example:
 ```sql
--- Query 22
+-- Query 26
 SELECT * FROM customers
   WHERE id = 31
   FOR UPDATE NOWAIT;
@@ -426,7 +556,7 @@ You can define different kinds of constraints on a table. We have already seen p
 
 Define a single column primary key:
 ```sql
--- Query 23
+-- Query 27
 CREATE TABLE rooms
   room_no     INTEGER PRIMARY KEY,
   ...
@@ -434,7 +564,7 @@ CREATE TABLE rooms
 ```
 You can also define an autoincementing primary key (that has its value incremented each time a new row is inserted):
 ```sql
--- Query 24
+-- Query 28
 CREATE TABLE reservations (
   id          SERIAL PRIMARY KEY,
   ...
@@ -446,7 +576,7 @@ Note also that `PRIMARY KEY` implies `NOT NULL`.
 
 If the primary key comprises multiple columns then the above method won't work. Instead we use a separate constraint definition, usually placed after all the column definitions, as follows:
 ```sql
--- Query 25
+-- Query 29
 CREATE TABLE invoice_items (
   invoice_no      INTEGER NOT NULL,
   item_no         INTEGER NOT NULL,
@@ -462,7 +592,7 @@ Here the `PRIMARY KEY` keywords appear at the beginning of the constraint defini
 
 Note also that a part of a primary key can be a foreign key to another table (e.g. invoice_no). That constraint has also been defined separately, a convention that some people prefer. A separate constraint is, of course, required when the foreign key comprises multiple columns, as below:
 ```sql
--- Query 26
+-- Query 30
 CREATE TABLE item_breakdown (
   ...
   FOREIGN KEY (invoice_no, item_no) REFERENCES invoice_items (invoice_no, item_no),
@@ -474,7 +604,7 @@ While the primary key provides unique identification of each row in a table, it 
 
 For example, in the hotel customers table the email column may be designated as unique, as follows:
 ```sql
--- Query 27
+-- Query 31
 CREATE TABLE customers (
   ...
   email       VARCHAR(120) NOT NULL UNIQUE,
@@ -485,7 +615,7 @@ The UNIQUE constraint automatically creates an index (just as the PRIMARY KEY co
 
 Where a combination of column values must be unique then the constraint must be defined separately, as follows:
 ```sql
--- Query 28
+-- Query 32
 CREATE TABLE reservations (
   ...
   room_no       INTEGER,
@@ -502,7 +632,7 @@ The `NOT NULL` part of a column definition is also a constraint, ensuring that e
 
 You can also provide custom checks on column values to ensure further compliance with business requirements. For example, it could be beneficial to ensure that data entered for checkin date and checkout date in a reservation are chronologically sensible. We use a `CHECK` constraint for this purpose:
 ```sql
--- Query 29
+-- Query 33
 CREATE TABLE reservations (
   ...
   CHECK (checkin_date <= checkout_date),
@@ -542,41 +672,41 @@ Do be aware, however, that there are also costs in providing indexes. Each index
 
 To create an index on a table we use the `CREATE INDEX` command:
 ```sql
--- Query 30
+-- Query 34
 CREATE INDEX res_cust_id ON reservations(cust_id);
 ```
 This index could be used to resolve queries that include:
 ```sql
--- Query 31
+-- Query 35
 SELECT ... FROM reservations ... WHERE cust_id = 1234 ...
 ```
 or
 ```sql
--- Query 32
+-- Query 36
 SELECT ... FROM reservations ... WHERE cust_id BETWEEN 1234 AND 1245 ...
 ```
 It's less likely to be used for a query that has:
 ```sql
--- Query 33
+-- Query 37
 SELECT ... FROM reservations ... WHERE cust_id < 1234 ...
 ```
 because the less than operator could generally refer to a large number of rows and lead the optimiser to prefer a full table scan.
 
 You can define an index on multiple columns and this could be used when any leading part of the index is specified in the `WHERE` conditions. For example:
 ```sql
--- Query 34
+-- Query 38
 CREATE INDEX res_cust_checkin ON reservations (cust_id, checkin_date);
 ```
 This index could be used when a query specifies `WHERE cust_id = 1234 AND checkin_date = '2020-06-12'` or when the query specifies only `WHERE cust_id = 1234`. It is not likely to be used if the where condition only specifies `WHERE checkin_date = '2020-06-12'`. Note also that this new index makes the previous one on `cust_id` alone fairly redundant.
 
 You can define a unique index that enforces uniqueness in the indexed column(s). For example:
 ```sql
--- Query 35
+-- Query 39
 CREATE UNIQUE INDEX cust_email ON customers(email);
 ```
 This is equivalent to defining a UNIQUE constraint in the table definition:
 ```sql
--- Query 36
+-- Query 40
 CREATE TABLE customers (
   ...
   email         VARCHAR(120) NOT NULL UNIQUE,
@@ -599,7 +729,7 @@ This is after a full scan of the uk_landreg_ppd table described above.
 
 The EXPLAIN command for the above is:
 ```sql
--- Query 37
+-- Query 41
 EXPLAIN SELECT COUNT(saon) FROM uk_landreg_ppd;
                                              QUERY PLAN                                              
 -----------------------------------------------------------------------------------------------------
@@ -617,7 +747,7 @@ Far from being a simple execution plan, even a query that can't use an index get
 
 In contrast, a query that can use an index, such as:
 ```sql
--- Query 38
+-- Query 42
 EXPLAIN SELECT * FROM uk_landreg_ppd WHERE postcode = 'M21 8UP';
 
                                        QUERY PLAN                                       
@@ -630,7 +760,7 @@ This has simpler output and indicates that an index (on the postcode column) can
 
 If you try to use EXPLAIN with any queries in the hotel database you'll find that it always chooses a table scan (from beginning to end looking at each row) because the tables are very small. For example:
 ```sql
--- Query 39
+-- Query 43
 EXPLAIN SELECT * FROM customers WHERE id = 32;
                         QUERY PLAN                        
 ----------------------------------------------------------
@@ -656,6 +786,7 @@ A View is a mechanism in SQL that stores a SELECT statement in the database defi
 
 To create a view you provide a name, optional replacement column names and the query that defines the view.  For example, to create a view of customers from the USA we might have:
 ```sql
+-- Query 44
 CREATE VIEW customers_usa (id, name, email, phone, address, city, zipcode) AS
   SELECT id, name, email, phone, address, city, postcode
     FROM customers
@@ -663,6 +794,7 @@ CREATE VIEW customers_usa (id, name, email, phone, address, city, zipcode) AS
 ```
 Views behave very much like tables for queries, so just use the name in the FROM clause along with other query clauses as required:
 ```sql
+-- Query 45
 SELECT * FROM customers_usa WHERE zipcode LIKE '900%'
   ORDER BY city, address;
 ```
@@ -673,6 +805,7 @@ Views are permanent definitions, created once and used as often as required. Vie
 
 To change a view definition use:
 ```sql
+-- Query 46
 CREATE OR REPLACE VIEW name (columns...) AS
   SELECT ...
 ```
@@ -698,22 +831,27 @@ Any privileges granted to the roles are, by default, inherited by its members.
 ### Granting Access to a Table
 The owner of a table can give any user or role access to their own table. The command to do this is:
 ```sql
+-- Query 47
 GRANT <access>,... ON <table name> TO <role/user name>;
 ```
 To give user liam access to query and update the customers table you use:
 ```sql
+-- Query 48
 GRANT SELECT, UPDATE ON customers TO liam;
 ```
 You can also allow the user to whom you grant access the ability to pass on their access rights to other users. To do this append the `WITH GRANT OPTION` to the command. So to give user `charlotte` the ability to query, insert, update and delete rooms plus the ability to pass those on to other users you use:
 ```sql
+-- Query 49
 GRANT SELECT, INSERT, UPDATE, DELETE ON rooms TO charlotte WITH GRANT OPTION;
 ```
 To give all sales staff query access to the reservations table you use:
 ```sql
+-- Query 50
 GRANT SELECT ON reservations TO sales;
 ```
 To add a user as a member of another role, you grant the role to the user:
 ```sql
+-- Query 51
 GRANT sales TO charlotte;
 GRANT manager TO ellie;
 ```
@@ -723,6 +861,7 @@ When a user has access to a view they do not need access to the underlying table
 
 For example, if I need to give cleaners access to the reservations table but only to see when a room is scheduled to be checked out today with no details of customer id, no. of guests or booking date I could use:
 ```sql
+-- Query 52
 CREATE VIEW rooms_to_clean (room_no, checkin_date, checkout_date) AS
   SELECT room_no, checkin_date, checkout_date
     FROM reservations
@@ -732,6 +871,7 @@ The cleaners could query this view without access to the full reservations table
 
 To give the cleaners access to the view use:
 ```sql
+-- Query 53
 GRANT SELECT ON rooms_to_clean TO cleaners;
 ```
 Here we have a role named `cleaners` to which all our cleaning staff belong. They do not need access to reservations. Granting read access to the view gives all members of the `cleaners` role access to the view for queries.
@@ -740,8 +880,11 @@ Here we have a role named `cleaners` to which all our cleaning staff belong. The
 
 ## Lesson Summary
 In this lesson you have learned how to:
-
+* Use OUTER and CROSS joins
 * Use sub-queries to access multiple tables in a query
+* Use Common Table Expressions in the WITH clause
+* Use the SQL set operators
+* Use self-referencing foreign keys to represent hierarchies
 * Start and complete transaction in PostgreSQL using COMMIT and ROLLBACK
 * Use locking to ensure consistent data
 * Define indexes to improve query performance
