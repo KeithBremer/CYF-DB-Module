@@ -3,7 +3,7 @@
 By the end of this lesson you should be able to:
 *   Understand and use OUTER joins and CROSS joins
 *   Use sub-queries to access multiple tables in a query
-*   Use the WITH clause to a define reusable subquery
+*   Use the WITH clause to define a reusable subquery
 *   Use the SQL set operators UNION, INTERSECT and EXCEPT
 *   Use and deploy self-referencing foreign keys to represent hierarchies
 *   Understand the purpose and use of transactions
@@ -17,46 +17,47 @@ By the end of this lesson you should be able to:
 ## Other Types of Join
 So far, in the original course, we looked at INNER joins. These are the most common types of join in any relational database system. With an INNER join rows must be matched on each side of the join in order to appear in the result.
 
-There are a few other types, however.
-
-### OUTER joins
-An outer join can include rows from either side of the join that don't match anything on the other side. This is best illustrated by a simple example:
+This is best illustrated by a simple example:
 
 table_1
+```
 | colx | coly |
 |------|------|
 | AAA | Fred |
 | BBB | Jenny |
 | CCC | Sue |
-|  |  |
-
+```
 table_2
-| cola | colb | colc |
-|------|------|------|
-| 001 | BBB | 23.20 |
-| 002 | CCC | 45.00 |
-| 003 | CCC | 15.90 |
-| 004 | DDD | 256.10 |
-|  |  |  |
-
+```
+| cola | colb |   colc |
+|------|------|--------|
+|    1 | BBB  |  23.20 |
+|    2 | CCC  |  45.00 |
+|    3 | CCC  |  15.90 |
+|    4 | DDD  | 256.10 |
+```
 In the join:
 ```sql
 -- Query 1
 SELECT a.colx, a.coly, b.cola, b.colc
-  FROM table_1 AS a JOIN
+  FROM table_1 AS a INNER JOIN
        table_2 AS b ON (a.colx = b.colb);
 ```
 the results are:
 ```
  colx | coly  | cola |   colc
  -----+-------+------+--------
- BBB  | Jenny | 001  |  23.20
- CCC  | Sue   | 002  |  45.00
- CCC  | Sue   | 003  |  15.90
+ BBB  | Jenny |   1  |  23.20
+ CCC  | Sue   |   2  |  45.00
+ CCC  | Sue   |   3  |  15.90
 ```
-The result doesn't show the row `AAA | Fred` nor `004 | DDD | 256.10`.
+The result doesn't show the row `AAA | Fred` from `table_1` nor the row `004 | DDD | 256.10` from `table_2`.
 
-There are some situations where you want to get all the rows from one side or other of the join. To do this we can use an OUTER join. Outer joins can choose from either the left or right side of the join to get unmatched rows. For example, to get the row `AAA | Fred` we can use:
+There are a few other types of join, however...
+
+### OUTER joins
+An outer join can include rows from either side of the join that don't match anything on the other side.
+There are some situations where you want to get all the rows from one side or other of the join. To do this we can use an OUTER join. Outer joins can choose from either the left or right side of the join to get unmatched rows. (Note: LEFT and RIGHT in this context indicate the positions of the tables in the FROM list if it is strung out in one line.) For example, to get the row `AAA | Fred` we can use:
 ```sql
 -- Query 2
 SELECT a.colx, a.coly, b.cola, b.colc
@@ -68,11 +69,11 @@ The results from this query are:
  colx | coly  | cola |   colc
  -----+-------+------+--------
  AAA  | Fred  |      |
- BBB  | Jenny | 001  |  23.20
- CCC  | Sue   | 002  |  45.00
- CCC  | Sue   | 003  |  15.90
+ BBB  | Jenny |   1  |  23.20
+ CCC  | Sue   |   2  |  45.00
+ CCC  | Sue   |   3  |  15.90
 ```
-Note that the columns from the unmatched row are NULL values.
+Note that the columns from the unmatched row are NULL values, even if the table definition defines them as NOT NULL.
 
 Alternatively we can choose the right hand table to return the full set of rows:
 ```sql
@@ -85,10 +86,10 @@ which results in:
 ```
  colx | coly  | cola |   colc
  -----+-------+------+--------
- BBB  | Jenny | 001  |  23.20
- CCC  | Sue   | 002  |  45.00
- CCC  | Sue   | 003  |  15.90
-      |       | 004  | 256.10
+ BBB  | Jenny |   1  |  23.20
+ CCC  | Sue   |   2  |  45.00
+ CCC  | Sue   |   3  |  15.90
+      |       |   4  | 256.10
 ```
 You can also use a FULL OUTER join to get non-matching results from both sides of the join, as follows:
 ```sql
@@ -102,47 +103,70 @@ with results:
  colx | coly  | cola |   colc
  -----+-------+------+--------
  AAA  | Fred  |      |
- BBB  | Jenny | 001  |  23.20
- CCC  | Sue   | 002  |  45.00
- CCC  | Sue   | 003  |  15.90
-      |       | 004  | 256.10
+ BBB  | Jenny |   1  |  23.20
+ CCC  | Sue   |   2  |  45.00
+ CCC  | Sue   |   3  |  15.90
+      |       |   4  | 256.10
 ```
-Note that the order of rows in these results is not guaranteed.
+Note that the order of rows in these results is not guaranteed unless an ORDER BY clause is specified.
 
 Remember that the keyword INNER is optional (and in most cases is not used).
 
 ### CROSS Joins
-This type of join is very rare in intentional queries - but does happen by accident in some cases. This join matches each row in one set with each row in the other set.
+This type of join is very rare in intentional queries - but does happen by accident in some cases. This join matches each row in one set with each row in the other set regardless of any column values.
 
 Using our same example tables as above, a deliberate CROSS JOIN would be written as:
 ```sql
 -- Query 5
-SELECT a.colx, a.coly, b.cola, b.colc
+SELECT a.colx, a.coly, b.cola, b.colb, b.colc
   FROM table_1 AS a CROSS JOIN
-       table_2 AS b ON (a.colx = b.colb);
+       table_2 AS b;
 ```
 and the results would be:
 ```
- colx | coly  | cola |   colc
- -----+-------+------+--------
- AAA  | Fred  | 001  |  23.20
- AAA  | Fred  | 002  |  45.00
- AAA  | Fred  | 003  |  15.90
- AAA  | Fred  | 004  | 256.10
- BBB  | Jenny | 001  |  23.20
- BBB  | Jenny | 002  |  45.00
- BBB  | Jenny | 003  |  15.90
- BBB  | Jenny | 004  | 256.10
- CCC  | Sue   | 001  |  23.20
- CCC  | Sue   | 002  |  45.00
- CCC  | Sue   | 003  |  15.90
- CCC  | Sue   | 004  | 256.10
+colx | coly  | cola | colb |  colc  
+-----+-------+------+------+--------
+AAA  | Fred  |    1 | BBB  |  23.20
+BBB  | Jenny |    1 | BBB  |  23.20
+CCC  | Sue   |    1 | BBB  |  23.20
+AAA  | Fred  |    2 | CCC  |  45.00
+BBB  | Jenny |    2 | CCC  |  45.00
+CCC  | Sue   |    2 | CCC  |  45.00
+AAA  | Fred  |    3 | CCC  |  15.90
+BBB  | Jenny |    3 | CCC  |  15.90
+CCC  | Sue   |    3 | CCC  |  15.90
+AAA  | Fred  |    4 | DDD  | 256.10
+BBB  | Jenny |    4 | DDD  | 256.10
+CCC  | Sue   |    4 | DDD  | 256.10
+(12 rows)
 ```
 This result set is called a "Cartesian Product" and is not normally of any practical use in a well-designed database.
 
 It can be useful in some cases to generate a large number of rows if you need to run performance tests against realistic data volumes. Remember you need some way to differentiate rows realistically as well.
 
----
+### Old Join Syntax
+An older way of writing joins in SQL does not use the JOIN keyword.  It is strongly recommended that you DO NOT use this in new code and you should preferably update any you do find to the newer JOIN keyword syntax.
+```sql
+-- Query 1a
+SELECT a.colx, a.coly, b.cola, b.colc
+  FROM table_1 AS a,
+       table_2 AS b
+  WHERE a.colx = b.colb;
+```
+This is functionally the same as Query 1 above (reproduced below for clarity).
+```sql
+-- Query 1
+SELECT a.colx, a.coly, b.cola, b.colc
+  FROM table_1 AS a INNER JOIN
+       table_2 AS b ON (a.colx = b.colb);
+```
+In a complex piece of code that joins several tables with multiple other WHERE conditions it can be easy to miss the crucial join condition.  In such cases you get either a cartesian product or a partial product (because some rows may be excluded by other conditions).
+
+Note that this syntax does not have a standard outer join mechanism (different dialects have used various non-standard tricks to solve this).
+
+### Exercise
+1.  Write a query to list **all** the rooms with room number, room type and rate along with any reservations that have been made for those rooms, giving customer id, checkin date and checkout date in room number order.
+
 ## Subqueries
 It is sometimes necessary to base the results of one query on what you get from another, for example, to find all customers from the same country as Mary Saveley:
 ```sql
@@ -202,6 +226,8 @@ SELECT * FROM customers c
 ```
 This example lists all customers who have at least one reservation. Note that the value (literal 1 in this case) returned by the subquery is not used, we are only interested in whether any row(s) exist. We could use any value or expression in that select list.
 
+The EXISTS operator is very efficient because it stops looking for rows as soon as it finds the first one.
+
 This is also an example of a **correlated subquery**.
 
 ### Correlated Subqueries
@@ -221,6 +247,11 @@ SELECT c.name, c.country,
           WHERE x.country = c.country);
 ```
 Notice that the inner query is using the value of `c.country` from the outer query. Can you work out what question this query answers?
+
+### Exercise
+1.  The hotel manager needs a report showing the room numbers and nights stay for all reservations where customers were from the USA.
+2.  Which rooms have never had a reservation.
+3.  List those rooms where customers stayed for more than the average number of nights for the room type.
 
 ### Use Subqueries for Columns or Tables
 You can use subqueries in many places where you would use a column name or a table name. For example:
@@ -272,8 +303,8 @@ WITH stays AS
   )
   SELECT s.name, s.country, s.nights
     FROM stays s
-    WHERE s.nights = (SELECT max(t.nights) 
-                        FROM stays t 
+    WHERE s.nights = (SELECT max(t.nights)
+                        FROM stays t
                         WHERE t.country = s.country);
 ```
 In this query the code:
@@ -290,8 +321,8 @@ defines the CTE that is used in the main part of the query that returns rows:
   -- Query 16
   SELECT s.name, s.country, s.nights
     FROM stays s
-    WHERE s.nights = (SELECT max(t.nights) 
-                        FROM stays t 
+    WHERE s.nights = (SELECT max(t.nights)
+                        FROM stays t
                         WHERE t.country = s.country);
 ```
 Notice that the main query refers to `stays` to use the CTE and that the `WITH` clause specifies `stays` in `WITH stays AS ...` The query for the CTE is written in parentheses the same as a subquery (which is what it is).
@@ -302,9 +333,9 @@ Although this query doesn't gain much from the WITH clause it can be very useful
 ## Using the Set Operators
 In SQL it is possible to combine the results of two (or more) separate queries using the set operators. These operations take the forms:
 ```sql
-SELECT ... UNION SELECT ...;
-SELECT ... INTERSECT SELECT ...;
-SELECT ... EXCEPT SELECT ...;
+SELECT ... UNION [ALL] SELECT ...;
+SELECT ... INTERSECT [ALL] SELECT ...;
+SELECT ... EXCEPT [ALL] SELECT ...;
 ```
 In each case the results from the first SELECT are combined with the results of the second SELECT. The results of each query can be thought of as a ***set*** in the mathematical sense.
 
@@ -332,16 +363,19 @@ SELECT name, email FROM customers c
         AND booking_date > current_date - INTERVAL '1 month')
 ORDER BY name;
 ```
-Note that both queries must return the same number of values and their data types must match. Also note that any `ORDER BY` clause applies to the whole query (the result of the set operation) and must only appear at the end of the last query.
+If we don't wish to remove duplicate rows we can add the keyword `ALL` after the set operator so that, for example, `UNION` becomes `UNION ALL`.
+
+Note that both queries must return the same number of values and their data types must match. Column names from the first query are used for the result set. Also note that any `ORDER BY` clause applies to the whole query (the result of the set operation) and must only appear at the end of the last query.
 
 To find the names and emails of customers who fall into both sets we just change the UNION operator to INTERSECT.
 
-Finally, if we don't wish to remove duplicate rows we can add the keyword `ALL` after the set operator so that, for example, `UNION` becomes `UNION ALL`.
+---
 
 ## Self-referencing Foreign Keys
 We've looked at foreign keys linking data in different tables but what happens if the thing I want to link is a row in the same table? There are many examples of this kind of connection: employees have managers who are also employees; cars are made up of components such as engines, steering, suspension, etc. that in turn are made up of smaller parts and so on.
 
 For example, an employees table could be as shown below:
+
 ![Employees Example](employees.png)
 
 The organisation chart at the top shows the management structure. At the lower left is the representation in a table diagram and lower right is the table contents.
@@ -388,7 +422,7 @@ To find all direct and indirect employees reporting to K Jones, for example, we 
 ```sql
 -- Query 21
 WITH RECURSIVE reports AS (
-  SELECT id, name, manager 
+  SELECT id, name, manager
     FROM employees WHERE name = 'K Jones'
   UNION
   SELECT e.id, e.name, e.manager
@@ -427,13 +461,27 @@ ROLLBACK;    -- undo changes since last BEGIN
 ```
 In your code you can detect the status of each command and then roll back the changes if any part fails.  If all succeed then you just commit the changes and they become permanent in the database.
 
+### ACID Rules
+ACID is a mnemonic for:
+
+* Atomic - all related changes succeed or all fail
+* Consistent - committed changes leave the database
+consistent (all rules obeyed)
+* Isolation - other users always see a consistent image, can’t see
+incomplete changes
+* Durable - committed changes are permanent (even after
+power failure)
+
 ---
 ### Exercise - Using Transactions
 1.  In the psql command line tool, issue the commands:
 ```sql
 BEGIN TRANSACTION;
 UPDATE reservations SET room_no = 310 WHERE id = 10;
+SELECT * FROM reservations WHERE id = 10;
 ```
+***Don't*** issue a `COMMIT` or `ROLLBACK` command.
+
 Now open a new terminal session (leaving the first still open) and in psql do:
 ```sql
 SELECT * FROM reservations WHERE id = 10;
@@ -448,7 +496,7 @@ then return to the second terminal session and requery reservation 10. What has 
 
 3.  Repeat step 1 of this exercise (use the same two terminal sessions if you wish).  DO NOT issue a `COMMIT` command.
 
-4.  In the second terminal session issue the command:
+4.  In the **second** terminal session issue the command:
 ```sql
 UPDATE reservations SET room_no = 304 WHERE id = 10;
 ```
@@ -460,6 +508,11 @@ ROLLBACK;
 ```
 Now check what has happened in the second session. Why do you think that happened? Requery reservation id 10 and check the room number.
 
+Finally issue the command:
+```sql
+COMMIT;
+```
+
 ---
 
 Transactions prevent other users (database sessions) from making changes to the same rows that have been changed in another open transaction.  This is done using 'locks'.  Locks do not exist physically but are a software mechanism that can be used by code (e.g. the RDBMS) to ensure that multiple processes can work consistently and safely with the same data.
@@ -469,34 +522,23 @@ PostgreSQL uses row locking by default for INSERT, UPDATE and DELETE, preventing
 Changes do not prevent other users (sessions) from querying the changed rows but changes won't be visible until they are committed.
 
 ---
-### ACID Rules
-ACID is a mnemonic for:
-
-* Atomic - all related changes succeed or all fail
-* Consistent - committed changes leave the database
-consistent (all rules obeyed)
-* Isolation - other users always see a consistent image, can’t see
-incomplete changes
-* Durable - committed changes are permanent (even after
-power failure)
-
----
 ## Locking
-Databases use locking mechanisms to control concurrent activity to ensure it remains consistent and safe.
+Databases use locking mechanisms to control concurrent activity to ensure they remain consistent and safe.
 
 Locking systems are beyond the scope of this course but for the moment you can assume that when a computer process locks a resource then that resource has limited accessibility for other processes.
 
 Locking prevents another user from breaking the changes you have made during a transaction. It is largely automatic, governed by the RDBMS.
 
 For example:
-Time | User A Activity | User B Activity | Comments
------|-----------------|-----------------|---------
-10:31 | Start a transaction | |
-10:32 | Change record 31 | | User A gets a lock on record 31
-10:33 | | Starts a transaction |
-10:34 | | Tries to change record 31 | Is blocked by user A's lock
-10:35 | Commit changes | | User A's lock is released
-10:36 | | User B's changes applied to record 31 | (there might be a problem here)
+
+| Time | User A Activity | User B Activity | Comments |
+| -----|-----------------|-----------------|----------|
+| 10:31 | Start a transaction | | |
+| 10:32 | Change record 31 | | User A gets a lock on record 31 |
+| 10:33 | | Starts a transaction | |
+| 10:34 | | Tries to change record 31 | Is blocked by user A's lock |
+| 10:35 | Commit changes | | User A's lock is released |
+| 10:36 | | User B's changes applied to record 31 | (there might be a problem here) |
 
 ### When Does Locking Occur?
 Whenever you issue an INSERT, UPDATE or DELETE command the RDBMS locks the record(s) you are processing, automatically.
@@ -536,7 +578,7 @@ Note that step 3. is, in computer terms, a VERY slow process. It's important the
 
 ---
 ### Locking in Other Databases
-In most DBs a lock conflict causes the second (and any subsequent) lock request to suspend until the resource (e.g. a row) is no longer locked. 
+In most DBs a lock conflict causes the second (and any subsequent) lock request to suspend until the resource (e.g. a row) is no longer locked.
 
 Some DBs provide a NOWAIT option on commands that take out locks such that the command ends immediately with an error if a conflict occurs. (mySQL, Oracle, PostgreSQL,...). For example:
 ```sql
@@ -552,7 +594,7 @@ If the above query finds it cannot lock the relevant row because it's already lo
 ## More on CREATE TABLE, etc.
 
 ### Defining Constraints
-You can define different kinds of constraints on a table. We have already seen primary keys and foreign keys, but just to recap:
+You can define different kinds of constraints on a table. We have already seen NOT NULL, primary keys and foreign keys, but just to recap:
 
 Define a single column primary key:
 ```sql
@@ -570,7 +612,7 @@ CREATE TABLE reservations (
   ...
   );
 ```
-Note that the SERIAL keyword is a pseudo-type and implies INTEGER. Use the `\d <table_name>` command to see the full implementation of SERIAL.
+Note that the SERIAL keyword is a pseudo-type and implies INTEGER and the use of a function `nextval` applied to an object in the database. Use the `\d <table_name>` command to see the full implementation of SERIAL.
 
 Note also that `PRIMARY KEY` implies `NOT NULL`.
 
@@ -599,6 +641,7 @@ CREATE TABLE item_breakdown (
   ...
 );
 ```
+
 ### The UNIQUE constraint
 While the primary key provides unique identification of each row in a table, it may be that other columns hold data that must be unique across the table. To do this we use the `UNIQUE` constraint. Unlike the `PRIMARY KEY` constraint, `UNIQUE` does not enforce `NOT NULL` on the column(s) and those columns can be NULL.
 
@@ -654,7 +697,34 @@ You can use any of the SQL conditional operators `=`, `<`, `>`, `<=`, `>=`, `!=`
 ---
 
 ## Designing for Performance
-Databases must handle a large number of actions every second, often accessing tables containing millions of rows, so it's important to ensure good performance. 
+Databases must handle a large number of actions every second, often accessing tables containing millions of rows, so it's important to ensure good performance.
+
+### Normalisation
+The primary requirement is that data structures must be well-designed. This means that most tables must be in at least "third normal form". Although it is not necessary to understand how to perform normalisation at this stage it is useful to understand what it means. Normalisation is generally designed to improve the stability of data during change operations (insert, update and delete).
+
+| Normal Form | Meaning |
+|---|---|
+| First Normal Form (1NF) | All data items (columns) are atomic. No repeating groups of data |
+| Second Normal Form (2NF) | All non-key data items must be dependent on (describe) the whole key |
+| Third Normal Form (3NF) | All data items must be independent (they must not be dependent on another non-key data item) |
+|  |  |
+
+An example of UNF (Un-normalised Form) might be as follows:
+
+![Un-normalised Data](unf-diagram.png)
+
+After applying the rules for 1NF we have:
+
+![First Normal Form Data](1nf-diagram.png)
+
+Second and third normal forms are applicable in cases where more complex key structures exist - to find out more visit https://www.techrepublic.com/article/relational-databases-using-normal-forms-to-create-databases/
+
+If a table is in 2NF then this implies it is in 1NF; if in 3NF then this implies 2NF.
+
+There are some contexts in which a table might not be in 3NF but this should be the result of a deliberate (and well-documented) decision to "de-normalise" the data for performance reasons. Because each stage of normalisation can create new tables then to reconstruct the original data we need to use SQL JOIN statements to put it back together. Joins are known to be more costly in terms of performance so designers will sometimes accept the problems associated with changes to the data in order to improve performance of queries.
+
+### Indexes
+Another way to improve the performance of queries is to provide appropriate indexes.
 
 You can define indexes to improve access to particular column values. Such indexes can be used when you specify the column value in WHERE clauses, etc. The RDBMS uses a query optimiser to decide whether to use any available indexes or not.
 
@@ -710,7 +780,7 @@ This is equivalent to defining a UNIQUE constraint in the table definition:
 CREATE TABLE customers (
   ...
   email         VARCHAR(120) NOT NULL UNIQUE,
-  ... 
+  ...
 );
 ```
 
@@ -826,7 +896,7 @@ Users are part of the PostgreSQL role hierarchy. Users can be members of roles a
 
 Here the users 'liam', 'charlotte', 'ellie' and 'nuala' are users and are also members of the 'manager' role.  Users 'ellie', 'moses' and 'maya' are members of the role 'sales'.  Notice that a user can be a member of more than one role.
 
-Any privileges granted to the roles are, by default, inherited by its members. 
+Any privileges granted to the roles are, by default, inherited by its members.
 
 ### Granting Access to a Table
 The owner of a table can give any user or role access to their own table. The command to do this is:
@@ -877,6 +947,89 @@ GRANT SELECT ON rooms_to_clean TO cleaners;
 Here we have a role named `cleaners` to which all our cleaning staff belong. They do not need access to reservations. Granting read access to the view gives all members of the `cleaners` role access to the view for queries.
 
 ---
+## PostgreSQL Procedural Language PL/pgSQL
+If your application (e.g. node server) issues multiple SQL commands then each of these involves network traffic between the node server and the database server. If the number of commands and the volume of data is large this can add a significant overhead to your app.
+
+One possible way to reduce this traffic is to put some of the procedural processing on the database server. PostgreSQL (and many other dialects) enable this by providing the means to execute procedural code in the same way as SQL.
+
+PostgreSQL supports several languages for procedural code in the database, for example, Python, Perl and Tcl. The native language is PL/pgSQL, a fairly simple block structured language that has many similarities to Oracle's PL/SQL. It supports all the usual programming features:
+* variables and constants
+* `if ... then ... else ... endif`
+* `case` constructs
+* loops (including `while` and `for` loops)
+* block-level exception handling
+and the ability to define functions and procedures and call these as needed.
+
+### PL/pgSQL Block Structure
+PL/pgSQL code is structured into blocks. These can be nested to provide logical separation of operations and enable the handling of exceptions. An anonymous block has the form:
+```sql
+-- Query 54
+do
+$$
+declare
+  counter   integer;
+  amount    numeric;
+begin
+  SELECT count(*), sum(total) INTO counter, amount
+    FROM invoices
+    WHERE invoice_date = current_date;
+  raise info 'Today''s total = % ct = %', amount, counter;
+end;
+$$;
+```
+Things to note about this code:
+* The anonymous block is introduced by the `do` command
+* The `$$` token is an alternative to the apostrophe (`'`), known as "dollar quoting"
+* The three keywords `declare`, `begin` and `end` define the parts of the block
+
+In the `declare` part of the block you must define all the variables and constants needed by the block. A variable declaration has the form:
+```sql
+  <var_name> <data_type> := <value>;
+e.g.
+  user_name varchar(30) := 'FredBloggs';
+```
+With a variable the `:= value` is optional.
+
+A constant is declared in a very similar fashion:
+```sql
+  <const_name> CONSTANT <data_type> := <value>;
+```
+Note the use of the keyword CONSTANT after the name. The `:= value` is mandatory for constants.
+
+In the `begin` part of the block you put all the procedural code to be executed. Notice that you can use SQL as an ordinary command in this context. A `SELECT` command, however, doesn't return its results to the user, instead you must use the `INTO var_name, ...` clause to capture them.
+
+You can send information to the user by means of the `raise` command:
+```sql
+  raise <level> <format>, <value>,...;
+```
+The `<level>` can be one of `debug`, `log`, `notice`, `info`, `warning` or `exception`. These define different levels of severity of the messages. The `exception` level causes the block to stop executing and reports an error.
+
+The `<format>` defines the message to be returned and can include one or more `%` symbols. These are placeholders for the following value parameters.
+
+`<value>` will be substituted in the `<format>` in place of the corresponding `%` sign.
+
+### Dollar Quoting
+Dollar quoting can be used anywhere in PL/pgSQL and SQL where you might use apostrophes. It's very useful when defining a PL/pgSQL code block so that you can use the normal apostrophes inside the block. The `raise info ...` command is an example of that.
+
+You can nest dollar quoting by including a name between the $ signs. For example:
+```sql
+do $out$
+declare
+  mycount integer;
+begin
+  select count(*) into mycount from rooms
+    where room_type = $in$PREMIER PLUS$in$;
+  raise info 'counter = %', mycount;
+end;
+$out$;
+```  
+This is rather contrived to show the mechanism in the simplest possible code fragment.
+
+
+
+***THIS IS A WORK IN PROGRESS***
+
+---
 
 ## Lesson Summary
 In this lesson you have learned how to:
@@ -890,6 +1043,8 @@ In this lesson you have learned how to:
 * Define indexes to improve query performance
 * Define views as a means to encapsulate complex queries or to control access
 * Control access to tables, views and other objects
+* Understand the use of procedural code in the database to reduce network traffic
+* Recognise the PL/pgSQL block structure and coding
 
 ---
 ## Homework

@@ -68,7 +68,7 @@ _"PostgreSQL is a powerful, open source object-relational database system that u
 - Pronounced S-Q-L or sequel
 - Stands for Structured Query Language
 - SQL is the standard language used to communicate with relational database
-- SQL statements are used to query, create, update, delete records in a database
+- SQL statements are used to query, create, update, delete records in a database as well as many other tasks
 - SQL statements are executed by a RDBMS.
 
 ### What is an RDBMS?
@@ -79,7 +79,7 @@ _"PostgreSQL is a powerful, open source object-relational database system that u
 
 ### What characterizes a relational database?
 
-As mentioned previously, a relational database is a specific type of database. Data is stored in _tables_ of _rows_ and _columns_ as per the example below:
+As mentioned previously, a relational database is a specific type of database. Data is stored in _tables (relations)_ of _rows (tuples)_ and _columns (attributes)_ as per the example below:
 
 <!-- ![table-diagram](table-diagram.png) -->
 <p align="center">
@@ -164,8 +164,8 @@ When you have finished reading the output use the 'Q' key to quit the display ma
 ```
     Space       Next screenful
     'B'         Previous screenful
-    Up Arrow    Next line
-    Down Arrow  Previous line
+    Down Arrow  Next line
+    Up Arrow    Previous line
     'Q'         Quit back to prompt
 ```
 
@@ -302,7 +302,9 @@ When comparing character data or dates you must enclose the values in single quo
 
 Only the rows that match the comparison test (called a predicate) are returned by the query. The predicate can use columns not returned by the query,
 
+
 ### Combining Tests in a Predicate
+
 Use AND and OR to combine tests:
 ```sql
 SELECT * FROM reservations
