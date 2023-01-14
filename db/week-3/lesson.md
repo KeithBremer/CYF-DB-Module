@@ -131,7 +131,9 @@ With String placeholders you don't put apostrophes around the placeholder:
 app.get("/customers/by_city/:city", (req, res) => {
   const cityName = req.params.city;
   db.query("SELECT * FROM customers WHERE city LIKE $1 || '%'", [cityName],
-  )
+    function { ... /* etc */ }
+  );
+});
 ```
 
 ### Exercise 1
