@@ -112,6 +112,17 @@ In the above code notice that:
 * The value we are wanting to look for appears as $1 - this is a placeholder for the 'id' value
 * The second parameter is the array `[custId]` that provides the id value
 
+Let's complete the endpoint to return the retrieved values:
+
+```js
+app.get("/customers/:id", function(req, res) {
+   var custId = parseInt(req.params.id);
+   db.query("SELECT * FROM customers WHERE id = $1", [custId],
+      function(err, result) {
+         result.json()
+      });
+})
+```
 In `db.query` you can use placeholders $1, $2, ... $9, $10, $11, ... etc to mark the place where a parameter value should be used. The parameters to replace the placeholders are supplied in the second argument, the array of values. In this case there is only one value (but it must still be put into an array) so we have `[custId]` as the replacement value for the first placeholder, `$1`. If there is more than one placeholder there must be the same number of array elements and they must be in the order of the placeholder numbers.
 
 ### String Placeholders
