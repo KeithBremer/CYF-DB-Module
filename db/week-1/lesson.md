@@ -126,6 +126,12 @@ You should see a listing of your tables as follows (with your own username as ow
     (5 rows)
 ```
 
+Here is the table diagram of the hotel database:
+<!-- ![hotel table diagram](hotel_tables.png) -->
+<p align="center">
+  <img src="hotel_tables.png" display="block" width="80%"/>
+</p>
+
 ## The SELECT Statement
 We are first going to look at retrieving data from the database so we can examine it and later, use it in our applications.
 
