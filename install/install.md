@@ -3,10 +3,10 @@
 We shall be using PostgreSQL - a widely used relational database. It's open-source and free to use. If you haven't already installed it then follow the instructions below:
 
 * If you use Ubuntu then see [here](#ubuntu-install).
-* If you use Windows then see [here](#windows-install).
+* If you use Windows then see [here](#windows-install). Note: Strongly recommended NOT to use Windows!
 * If you have Mac-OS then see [here](#macos-install).
 
-If you get stuck at any stage please post a message requesting help on #north-west-class-3.
+If you get stuck at any stage please post a message requesting help on #nw*x*-entire-cohort channel.
 
 If you don't use any of the above operating systems then please talk to a mentor about how to proceed.
 
@@ -50,7 +50,7 @@ This will ask for your Ubuntu login password to run the sudo command. The other 
 
 You'll be asked for the new database user's password (twice) - you'll need this later for when we connect to the database from Node.
 
-Remember the new username and password details - you will need them later.
+***Remember the new username and password details - you will need them later.***
 
 ### Creating a new database
 
