@@ -200,7 +200,7 @@ With the Apple Mac you can choose either a graphical installation or a command l
 ### Graphical Installation
 **Note that you must be logged in as a user with Administrator privileges on OSX for all these steps.**
 
-From the Macintosh OSX system you can install PostgreSQL from the Postgres.app package. Download this from https://postgresapp.com but make sure you choose PostgreSQL version 12 and the appropriate platform for your Mac. Once you have downloaded Postgres you can open the disk image from your Downloads folder. Drag the Postgres icon to the Applications folder.
+From the Macintosh OSX system you can install PostgreSQL from the Postgres.app package. Download this from https://postgresapp.com but make sure you choose the latest stable version of PostgreSQL and the appropriate platform for your Mac. Once you have downloaded Postgres you can open the disk image from your Downloads folder. Drag the Postgres icon to the Applications folder.
 
 ![Postgres Disk Image](mac-screenshots/Screenshot_Postgres_disk.png)
 
