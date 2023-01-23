@@ -533,28 +533,6 @@ Not all SQL implementations of SQL support LIMIT, some use TOP while Oracle uses
 4.  List the room number, type and the cost of staying 5 nights in each of the top 15 most expensive rooms.
 
 ---
-
-### Inserting data
-
-To add new data to a table use the INSERT command that has the following format:
-```sql
-INSERT INTO table_name (column_name, ...)
-       VALUES (value, ...)
-```
-For example:
-```sql
-INSERT INTO customers (name, email, address, city, postcode, country)
-  VALUES ('John Smith','j.smith@johnsmith.org',
-          '11 New Road','Liverpool','L10 2AB','UK');
-```
-Note that the order of values in the `VALUES (...)` clause must correspond to the columns in the column name list. The first value is stored in the first named column, the second value in the second named column and so forth.
-
-### Exercise 6
-
-1. Insert yourself in the `customers` table. Query the table to check your new data.
-2. Insert a new room type of PENTHOUSE with a default rate of 185.00.
-
----
 ## Summary
 
 In this lesson you have learned the use of databases and how relational databases are structured. You've also learned how to use basic single-table query commands in SQL and some of the special 'backslash' commands in `psql`. You have used the SELECT command to control the columns and values that are returned, the DISTINCT, ORDER BY and LIMIT clauses to control the order and numbers of rows returned and you've used the WHERE clause to choose the rows that you access. You have learned the INSERT command to add new data to the database
