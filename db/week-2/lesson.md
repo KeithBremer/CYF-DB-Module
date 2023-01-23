@@ -204,7 +204,29 @@ It can be confusing at first knowing whether to use a WHERE clause or a HAVING c
 3.  Which rooms have been occupied for less than 10 nights and for how many nights have they been occupied?
 
 ---
-## Updating and Deleting Rows
+## Inserting, Updating and Deleting Rows
+
+### Inserting data
+
+To add new data to a table use the INSERT command that has the following format:
+```sql
+INSERT INTO table_name (column_name, ...)
+       VALUES (value, ...)
+```
+For example:
+```sql
+INSERT INTO customers (name, email, address, city, postcode, country)
+  VALUES ('John Smith','j.smith@johnsmith.org',
+          '11 New Road','Liverpool','L10 2AB','UK');
+```
+Note that the order of values in the `VALUES (...)` clause must correspond to the columns in the column name list. The first value is stored in the first named column, the second value in the second named column and so forth.
+
+### Exercise 6
+
+1. Insert yourself in the `customers` table. Query the table to check your new data.
+2. Insert a new room type of PENTHOUSE with a default rate of 185.00.
+
+---
 
 ### Updating Existing Data
 
