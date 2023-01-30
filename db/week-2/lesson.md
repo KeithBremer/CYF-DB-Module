@@ -13,8 +13,7 @@ Read the Mentors Notes [here](./mentors.md)
 - Revision from last week
 - [More SQL](#more-sql)
   - Using aggregate functions in a query
-  - Updating a row
-  - Deleting a row
+  - Inserting, Updating and Deleting Rows
   - Joining tables
   - Other useful operations
   - Creating a Table
@@ -28,8 +27,7 @@ Read the Mentors Notes [here](./mentors.md)
 ## Learning Objectives
 
 - Aggregate data over multiple rows and use aggregate values to restrict the results
-- Update rows in a pre-existing table using `UPDATE`
-- Delete unwanted rows from an existing table using `DELETE`
+- Insert, Update and Delete rows in a pre-existing table using `INSERT`, `UPDATE` and `DELETE`
 - Combine tables together using `INNER JOIN`
 - Create a table with primary and foreign keys
 - Connect a PostgreSQL database to a NodeJS application
@@ -219,7 +217,9 @@ INSERT INTO customers (name, email, address, city, postcode, country)
   VALUES ('John Smith','j.smith@johnsmith.org',
           '11 New Road','Liverpool','L10 2AB','UK');
 ```
-Note that the order of values in the `VALUES (...)` clause must correspond to the columns in the column name list. The first value is stored in the first named column, the second value in the second named column and so forth.
+Note:
+1. You do not need to supply the value for the automatically generated `id` column, it is populated from a sequence generator object.
+2. The order of values in the `VALUES (...)` clause must correspond to the columns in the column name list. The first value is stored in the first named column, the second value in the second named column and so forth.
 
 ### Exercise 6
 
