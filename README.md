@@ -6,4 +6,4 @@ The standard CYF DB module does not sit well with the learning styles of most no
 Due to time constraints this course cannot cover more than a fraction of the topics that are needed by a competent developer using database. For example, we don't cover subqueries, locking, transactions, indexing, security, views, triggers, stored procedures and so forth. It's important to let the students know about these serious omissions but we can potentially help. We also don't cover the techniques required in NodeJS to make a multi-user app "update-safe" such that one user's changes can't destroy those of another user.
 
 I'm currently building up a mini-course that covers some of these missing topics, perhaps called an **"Intermediate SQL/Node Course"**. This can help fill the gaps in what we teach in the basic course.
- 
+ <!-- instructions completed -->
