@@ -1,6 +1,6 @@
 --Exercise 1
 --1.1 List the name, phone , eamil of all customers
-SELECT name,email FROM customers;
+SELECT name,phone,email FROM customers;
 
 --1.2 List all the details of rooms
 SELECT * FROM rooms;
