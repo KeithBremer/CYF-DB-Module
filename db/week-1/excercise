@@ -1,0 +1,129 @@
+PS C:\Users\mamad\Documents\GitHub\CYF-DB-Module> psql cyf
+Password for user mamad:
+psql: error: fe_sendauth: no password supplied
+PS C:\Users\mamad\Documents\GitHub\CYF-DB-Module>
+PS C:\Users\mamad\Documents\GitHub\CYF-DB-Module> psql cyf_hotel mamad;
+Password for user mamad:
+psql (12.13)
+WARNING: Console code page (850) differs from Windows code page (1252)
+         8-bit characters might not work correctly. See psql reference
+         page "Notes for Windows users" for details.
+Type "help" for help.
+
+cyf_hotel=> select
+cyf_hotel-> select name, phone, email, country from customers where country = 'France';
+ERROR:  syntax error at or near "select"
+LINE 2: select name, phone, email, country from customers where coun...
+        ^
+cyf_hotel=> select name, phone, email, country from customers where country = 'France';
+         name         |      phone       |             email             | country
+----------------------+------------------+-------------------------------+---------
+ Laurence Lebihan     | 91.24.4555       | laurence.lebihan@xmzx.net     | France
+ Carine Schmitt       | 40.32.2555       | carine.schmitt@dftu.net       | France
+ Janine Labrune       | 40.67.8555       | janine.labrune@dlsh.net       | France
+ Mary Saveley         | 78.32.5555       | mary.saveley@yppl.net         | France
+ Martine Ranc├®       | 20.16.1555       | martine.ranc├®@xeqs.net       | France
+ Marie Bertrand       | (1) 42.34.2555   | marie.bertrand@glut.net       | France
+ Fr├®d├®rique Citeaux | 88.60.1555       | fr├®d├®rique.citeaux@vekn.net | France
+ Annette Roulet       | 61.77.6555       | annette.roulet@lgha.net       | France
+ Daniel Da Silva      | +33 1 46 62 7555 | daniel.da.silva@hijy.net      | France
+ Daniel Tonini        | 30.59.8555       | daniel.tonini@mxvw.net        | France
+ Laurence Lebihan     | 91.24.4555       | laurence.lebihan@xmzx.net     | France
+ Paul Henriot         | 26.47.1555       | paul.henriot@uwua.net         | France
+ Dominique Perrier    | (1) 47.55.6555   | dominique.perrier@bdim.net    | France
+(13 rows)
+
+
+cyf_hotel=>
+cyf_hotel=>
+cyf_hotel=> select name, phone, email, country from
+cyf_hotel-> customers
+cyf_hotel-> where country = 'France';
+         name         |      phone       |             email             | country
+----------------------+------------------+-------------------------------+---------
+ Laurence Lebihan     | 91.24.4555       | laurence.lebihan@xmzx.net     | France
+ Carine Schmitt       | 40.32.2555       | carine.schmitt@dftu.net       | France
+ Janine Labrune       | 40.67.8555       | janine.labrune@dlsh.net       | France
+ Mary Saveley         | 78.32.5555       | mary.saveley@yppl.net         | France
+ Martine Ranc├®       | 20.16.1555       | martine.ranc├®@xeqs.net       | France
+ Marie Bertrand       | (1) 42.34.2555   | marie.bertrand@glut.net       | France
+ Fr├®d├®rique Citeaux | 88.60.1555       | fr├®d├®rique.citeaux@vekn.net | France
+ Annette Roulet       | 61.77.6555       | annette.roulet@lgha.net       | France
+ Daniel Da Silva      | +33 1 46 62 7555 | daniel.da.silva@hijy.net      | France
+ Daniel Tonini        | 30.59.8555       | daniel.tonini@mxvw.net        | France
+ Laurence Lebihan     | 91.24.4555       | laurence.lebihan@xmzx.net     | France
+ Paul Henriot         | 26.47.1555       | paul.henriot@uwua.net         | France
+ Dominique Perrier    | (1) 47.55.6555   | dominique.perrier@bdim.net    | France
+(13 rows)
+
+
+cyf_hotel=> \e;
+invalid command \e;
+Try \? for help.
+cyf_hotel=> \e
+         name         |      phone       |             email             |            country
+----------------------+------------------+-------------------------------+-------------------------------
+ Laurence Lebihan     | 91.24.4555       | laurence.lebihan@xmzx.net     | 12, rue des Bouchers
+ Carine Schmitt       | 40.32.2555       | carine.schmitt@dftu.net       | 54, rue Royale
+ Janine Labrune       | 40.67.8555       | janine.labrune@dlsh.net       | 67, rue des Cinquante Otages
+ Mary Saveley         | 78.32.5555       | mary.saveley@yppl.net         | 2, rue du Commerce
+ Martine Ranc├®       | 20.16.1555       | martine.ranc├®@xeqs.net       | 184, chauss├®e de Tournai
+ Marie Bertrand       | (1) 42.34.2555   | marie.bertrand@glut.net       | 265, boulevard Charonne
+ Fr├®d├®rique Citeaux | 88.60.1555       | fr├®d├®rique.citeaux@vekn.net | 24, place Kl├®ber
+ Annette Roulet       | 61.77.6555       | annette.roulet@lgha.net       | 1 rue Alsace-Lorraine
+ Daniel Da Silva      | +33 1 46 62 7555 | daniel.da.silva@hijy.net      | 27 rue du Colonel Pierre Avia
+ Daniel Tonini        | 30.59.8555       | daniel.tonini@mxvw.net        | 67, avenue de lEurope
+ Laurence Lebihan     | 91.24.4555       | laurence.lebihan@xmzx.net     | 12, rue des Bouchers
+ Paul Henriot         | 26.47.1555       | paul.henriot@uwua.net         | 59 rue de l'Abbaye
+ Dominique Perrier    | (1) 47.55.6555   | dominique.perrier@bdim.net    | 25, rue Lauriston
+(13 rows)
+
+
+cyf_hotel=>
+cyf_hotel=>
+cyf_hotel=> \e
+         name         |      phone       |             email             |            country
+----------------------+------------------+-------------------------------+-------------------------------
+ Laurence Lebihan     | 91.24.4555       | laurence.lebihan@xmzx.net     | 12, rue des Bouchers
+ Carine Schmitt       | 40.32.2555       | carine.schmitt@dftu.net       | 54, rue Royale
+ Janine Labrune       | 40.67.8555       | janine.labrune@dlsh.net       | 67, rue des Cinquante Otages
+ Mary Saveley         | 78.32.5555       | mary.saveley@yppl.net         | 2, rue du Commerce
+ Martine Ranc├®       | 20.16.1555       | martine.ranc├®@xeqs.net       | 184, chauss├®e de Tournai
+ Marie Bertrand       | (1) 42.34.2555   | marie.bertrand@glut.net       | 265, boulevard Charonne
+ Fr├®d├®rique Citeaux | 88.60.1555       | fr├®d├®rique.citeaux@vekn.net | 24, place Kl├®ber
+ Annette Roulet       | 61.77.6555       | annette.roulet@lgha.net       | 1 rue Alsace-Lorraine
+ Daniel Da Silva      | +33 1 46 62 7555 | daniel.da.silva@hijy.net      | 27 rue du Colonel Pierre Avia
+ Daniel Tonini        | 30.59.8555       | daniel.tonini@mxvw.net        | 67, avenue de lEurope
+ Laurence Lebihan     | 91.24.4555       | laurence.lebihan@xmzx.net     | 12, rue des Bouchers
+ Paul Henriot         | 26.47.1555       | paul.henriot@uwua.net         | 59 rue de l'Abbaye
+ Dominique Perrier    | (1) 47.55.6555   | dominique.perrier@bdim.net    | 25, rue Lauriston
+(13 rows)
+
+
+cyf_hotel=>
+cyf_hotel=>
+cyf_hotel=>
+cyf_hotel=>
+cyf_hotel=>
+cyf_hotel=>
+cyf_hotel=>
+cyf_hotel=> \e
+         name         |      phone       |             email             |            country
+----------------------+------------------+-------------------------------+-------------------------------
+ Laurence Lebihan     | 91.24.4555       | laurence.lebihan@xmzx.net     | 12, rue des Bouchers
+ Carine Schmitt       | 40.32.2555       | carine.schmitt@dftu.net       | 54, rue Royale
+ Janine Labrune       | 40.67.8555       | janine.labrune@dlsh.net       | 67, rue des Cinquante Otages
+ Mary Saveley         | 78.32.5555       | mary.saveley@yppl.net         | 2, rue du Commerce
+ Martine Ranc├®       | 20.16.1555       | martine.ranc├®@xeqs.net       | 184, chauss├®e de Tournai
+ Marie Bertrand       | (1) 42.34.2555   | marie.bertrand@glut.net       | 265, boulevard Charonne
+ Fr├®d├®rique Citeaux | 88.60.1555       | fr├®d├®rique.citeaux@vekn.net | 24, place Kl├®ber
+ Annette Roulet       | 61.77.6555       | annette.roulet@lgha.net       | 1 rue Alsace-Lorraine
+ Daniel Da Silva      | +33 1 46 62 7555 | daniel.da.silva@hijy.net      | 27 rue du Colonel Pierre Avia
+ Daniel Tonini        | 30.59.8555       | daniel.tonini@mxvw.net        | 67, avenue de lEurope
+ Laurence Lebihan     | 91.24.4555       | laurence.lebihan@xmzx.net     | 12, rue des Bouchers
+ Paul Henriot         | 26.47.1555       | paul.henriot@uwua.net         | 59 rue de l'Abbaye
+ Dominique Perrier    | (1) 47.55.6555   | dominique.perrier@bdim.net    | 25, rue Lauriston
+(13 rows)
+
+
+cyf_hotel=>
