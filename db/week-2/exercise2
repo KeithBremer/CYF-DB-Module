@@ -1,0 +1,839 @@
+psql cyf_hotel mamad
+Password for user mamad:
+cyf_hotel=>  SELECT sum(total)
+cyf_hotel->  FROM invoices;
+   sum
+----------
+ 19626.00
+(1 row)
+
+
+cyf_hotel=> SELECT sum(total)
+cyf_hotel->    FROM invoices FROM invoices
+cyf_hotel->    WHERE invoice_date BETWEEN
+cyf_hotel-> SELECT sum(total)
+cyf_hotel->    FROM invoices
+cyf_hotel->    WHERE invoice_date BETWEEN
+cyf_hotel->          '2022-12-01' AND '2022-12-31';
+ERROR:  syntax error at or near "FROM"
+LINE 2:    FROM invoices FROM invoices
+                         ^
+cyf_hotel=> SELECT sum(total)
+cyf_hotel->    FROM invoices
+cyf_hotel->    WHERE invoice_date BETWEEN
+cyf_hotel-> '2022-12-01' AND '2022-12-31';
+   sum
+----------
+ 10052.00
+(1 row)
+
+
+cyf_hotel=> SELECT sum(total)
+cyf_hotel->    FROM invoices
+cyf_hotel->    WHERE invoice_date BETWEEN
+cyf_hotel-> SELECT sum(total)
+cyf_hotel->    FROM invoices
+cyf_hotel->    WHERE invoice_date BETWEEN
+cyf_hotel->          '2022-12-01' AND '2022-12-31';
+ERROR:  syntax error at or near "SELECT"
+LINE 4: SELECT sum(total)
+        ^
+cyf_hotel=> SELECT sum(total)
+cyf_hotel->    FROM invoices
+cyf_hotel->    WHERE invoice_date BETWEEN
+cyf_hotel->          '2022-12-01' AND '2022-12-31';
+   sum
+----------
+ 10052.00
+(1 row)
+
+
+cyf_hotel=> SELECT avg(checkout_date - checkin_date)
+cyf_hotel->   FROM reservations;
+        avg
+--------------------
+ 3.2075471698113208
+(1 row)
+
+
+cyf_hotel=> SELECT min(rate) AS lowest,
+cyf_hotel->        max(rate) AS highest
+cyf_hotel->   FROM rooms;
+ lowest | highest
+--------+---------
+  85.00 |  123.00
+(1 row)
+
+
+cyf_hotel=> SELECT count(id) AS id_ct, count(postcode) AS post_ct
+cyf_hotel->   FROM customers;
+ id_ct | post_ct
+-------+---------
+   133 |     126
+(1 row)
+
+
+cyf_hotel=> SELECT count(*) FROM customers WHERE country = 'Belgium';
+ count
+-------
+     2
+(1 row)
+
+
+cyf_hotel=> SELECT count(*) FROM rooms
+cyf_hotel->   GROUP BY room_type;
+ count
+-------
+    14
+    14
+     8
+    10
+     2
+(5 rows)
+
+
+cyf_hotel=> SELECT count(*) FROM rooms
+cyf_hotel->   GROUP BY room_type;
+ count
+-------
+    14
+    14
+     8
+    10
+     2
+(5 rows)
+
+
+cyf_hotel=> SELECT room_type, count(*) FROM rooms
+cyf_hotel->   GROUP BY room_type;
+  room_type   | count
+--------------+-------
+ PREMIUM      |    14
+ PREMIER      |    14
+ PREMIER PLUS |     8
+ PREMIUM PLUS |    10
+ FAMILY       |     2
+(5 rows)
+
+
+cyf_hotel=> SELECT count(*) FROM rooms
+cyf_hotel-> GROUP BY rooms,room_type,customers,reservations ;
+ERROR:  column "customers" does not exist
+LINE 2: GROUP BY rooms,room_type,customers,reservations ;
+                                 ^
+cyf_hotel=> SELECT count(*) FROM tables
+cyf_hotel-> GROUP BY rooms,room_type,customers,reservations;
+ERROR:  relation "tables" does not exist
+LINE 1: SELECT count(*) FROM tables
+                             ^
+cyf_hotel=> SELECT count(*) FROM rooms
+cyf_hotel->   GROUP BY room_type,customers,reservations;
+ERROR:  column "customers" does not exist
+LINE 2:   GROUP BY room_type,customers,reservations;
+                             ^
+cyf_hotel=> SELECT count(*) FROM customers WHERE room_type,customers,reservations;
+ERROR:  syntax error at or near ","
+LINE 1: SELECT count(*) FROM customers WHERE room_type,customers,res...
+                                                      ^
+cyf_hotel=> SELECT count(*) FROM tables
+cyf_hotel->   GROUP BY room_type,customers,reservations;
+ERROR:  relation "tables" does not exist
+LINE 1: SELECT count(*) FROM tables
+                             ^
+cyf_hotel=> SELECT count(*) FROM customers
+cyf_hotel->   GROUP BY room_type,reservations;
+ERROR:  column "room_type" does not exist
+LINE 2:   GROUP BY room_type,reservations;
+                   ^
+cyf_hotel=> SELECT count(*) FROM rooms,room_type,customers,reservations;
+ERROR:  relation "room_type" does not exist
+LINE 1: SELECT count(*) FROM rooms,room_type,customers,reservations;
+                                   ^
+cyf_hotel=> SELECT count(*) FROM rooms,customers,reservations;
+ count
+--------
+ 676704
+(1 row)
+
+
+cyf_hotel=> SELECT sum(total)
+cyf_hotel->    FROM invoices
+cyf_hotel->    WHERE invoice_date BETWEEN
+cyf_hotel->
+cyf_hotel-> SELECT sum(total)
+cyf_hotel->    FROM revSERVATIONS
+cyf_hotel->    WHERE reservation_date BETWEEN
+cyf_hotel-> '2023-03-01' AND '2023-03-31'
+cyf_hotel-> ;
+ERROR:  syntax error at or near "SELECT"
+LINE 4: SELECT sum(total)
+        ^
+cyf_hotel=> SELECT avg(checkout_date - checkin_date)
+cyf_hotel->   FROM reservations;
+        avg
+--------------------
+ 3.2075471698113208
+(1 row)
+
+
+cyf_hotel=> SELECT avg('2023-03-01' - '2023-03-31')
+cyf_hotel->   FROM reservations;
+ERROR:  operator is not unique: unknown - unknown
+LINE 1: SELECT avg('2023-03-01' - '2023-03-31')
+                                ^
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
+cyf_hotel=> SELECT avg(checkout_date - checkin_date)
+cyf_hotel->
+cyf_hotel-> SELECT trunc(room_no/100) AS floor,
+cyf_hotel->        to_char(checkin_date, 'YYYY-MM') AS month,
+cyf_hotel->        count(*), sum(no_guests), avg(no_guests)
+cyf_hotel->   FROM reservations
+cyf_hotel->   GROUP BY floor, month;
+ERROR:  syntax error at or near "SELECT"
+LINE 2: SELECT trunc(room_no/100) AS floor,
+        ^
+cyf_hotel=> SELECT trunc(room_no/100) AS floor,
+cyf_hotel->        to_char(checkin_date, 'YYYY-MM') AS month,
+cyf_hotel->   FROM reservations
+cyf_hotel->   GROUP BY floor, month;
+ERROR:  syntax error at or near "FROM"
+LINE 3:   FROM reservations
+          ^
+cyf_hotel=> SELECT trunc(room_no/100) AS floor,
+cyf_hotel->        to_char(checkin_date, 'YYYY-MM') AS month,
+cyf_hotel->        count(*), sum(no_guests), avg(no_guests)
+cyf_hotel->   FROM reservations
+cyf_hotel->   GROUP BY floor, month;
+ floor |  month  | count | sum |        avg
+-------+---------+-------+-----+--------------------
+     2 | 2022-12 |    14 |  21 | 1.5000000000000000
+       | 2023-03 |    13 |  16 | 1.2307692307692308
+     4 | 2023-01 |     7 |  10 | 1.4285714285714286
+       | 2023-02 |    28 |  38 | 1.3571428571428571
+     3 | 2022-12 |     4 |   6 | 1.5000000000000000
+     1 | 2023-01 |     3 |   5 | 1.6666666666666667
+     2 | 2023-01 |     5 |   8 | 1.6000000000000000
+     1 | 2022-12 |    14 |  21 | 1.5000000000000000
+     3 | 2023-01 |    10 |  15 | 1.5000000000000000
+     4 | 2022-12 |     8 |  12 | 1.5000000000000000
+(10 rows)
+cyf_hotel=> (checkin_date, 'YYYY-MM') AS month,
+cyf_hotel->        count(*), sum(no_guests), avg(no_guests)
+cyf_hotel->   FROM reservations
+cyf_hotel->   WHERE room_no BETWEEN 200 AND 399;
+ERROR:  syntax error at or near "checkin_date"
+LINE 1: (checkin_date, 'YYYY-MM') AS month,
+         ^
+cyf_hotel=> SELECT trunc(room_no/100) AS floor,
+cyf_hotel->        to_char(checkin_date, 'YYYY-MM') AS month,
+cyf_hotel->        count(*), sum(no_guests), avg(no_guests)
+cyf_hotel->   FROM reservations
+cyf_hotel->   WHERE room_no BETWEEN 200 AND 399
+cyf_hotel->   GROUP BY floor, month;
+ floor |  month  | count | sum |        avg
+-------+---------+-------+-----+--------------------
+     3 | 2022-12 |     4 |   6 | 1.5000000000000000
+     2 | 2022-12 |    14 |  21 | 1.5000000000000000
+     2 | 2023-01 |     5 |   8 | 1.6000000000000000
+     3 | 2023-01 |    10 |  15 | 1.5000000000000000
+(4 rows)
+
+
+cyf_hotel=>
+cyf_hotel=> SELECT trunc(room_no/100) AS floor,
+cyf_hotel->        to_char(checkin_date, 'YYYY-MM') AS month,
+cyf_hotel->        count(*), sum(no_guests), avg(no_guests)
+cyf_hotel->    FROM reservations
+cyf_hotel->    GROUP BY floor, month
+cyf_hotel->    HAVING count(*) > 4;
+ floor |  month  | count | sum |        avg
+-------+---------+-------+-----+--------------------
+     2 | 2022-12 |    14 |  21 | 1.5000000000000000
+       | 2023-03 |    13 |  16 | 1.2307692307692308
+     4 | 2023-01 |     7 |  10 | 1.4285714285714286
+       | 2023-02 |    28 |  38 | 1.3571428571428571
+     2 | 2023-01 |     5 |   8 | 1.6000000000000000
+     1 | 2022-12 |    14 |  21 | 1.5000000000000000
+     3 | 2023-01 |    10 |  15 | 1.5000000000000000
+     4 | 2022-12 |     8 |  12 | 1.5000000000000000
+(8 rows)
+
+
+cyf_hotel=> SELECT sum(total)
+cyf_hotel->    FROM invoices;
+   sum
+----------
+ 19626.00
+(1 row)
+
+
+cyf_hotel=> SELECT sum(total)
+cyf_hotel-> SELECT sum(total)
+cyf_hotel->
+cyf_hotel-> SELECT trunc(room_no/100) AS floor,
+cyf_hotel->        to_char(checkin_date, 'YYYY-MM') AS month,
+cyf_hotel->        count(*), sum(no_guests), avg(no_guests)
+cyf_hotel->   FROM reservations
+cyf_hotel->   GROUP BY floor, month;
+ERROR:  syntax error at or near "SELECT"
+LINE 2: SELECT sum(total)
+        ^
+cyf_hotel=> SELECT trunc(room_no/100) AS floor,
+cyf_hotel->        to_char(checkin_date, 'YYYY-MM') AS month,
+cyf_hotel->        count(*), sum(no_guests), avg(no_guests)
+cyf_hotel->   FROM reservations
+cyf_hotel->   GROUP BY floor, month;
+ floor |  month  | count | sum |        avg
+-------+---------+-------+-----+--------------------
+     2 | 2022-12 |    14 |  21 | 1.5000000000000000
+       | 2023-03 |    13 |  16 | 1.2307692307692308
+     4 | 2023-01 |     7 |  10 | 1.4285714285714286
+       | 2023-02 |    28 |  38 | 1.3571428571428571
+     3 | 2022-12 |     4 |   6 | 1.5000000000000000
+     1 | 2023-01 |     3 |   5 | 1.6666666666666667
+     2 | 2023-01 |     5 |   8 | 1.6000000000000000
+     1 | 2022-12 |    14 |  21 | 1.5000000000000000
+     3 | 2023-01 |    10 |  15 | 1.5000000000000000
+     4 | 2022-12 |     8 |  12 | 1.5000000000000000
+(10 rows)
+
+
+cyf_hotel=> SELECT rooms.floor, count(guests.room_number)
+cyf_hotel-> FROM rooms
+cyf_hotel-> LEFT JOIN guests ON rooms.room_number = guests.room_number
+cyf_hotel-> GROUP BY rooms.floor;
+ERROR:  relation "guests" does not exist
+LINE 3: LEFT JOIN guests ON rooms.room_number = guests.room_number
+                  ^
+cyf_hotel=> SELECT rooms.floor, count(guests.room_number)
+cyf_hotel-> FROM rooms
+cyf_hotel-> LEFT JOIN guests ON rooms.room_number = guests.room_number
+cyf_hotel-> GROUP BY rooms.floor;
+ERROR:  relation "guests" does not exist
+LINE 3: LEFT JOIN guests ON rooms.room_number = guests.room_number
+                  ^
+cyf_hotel=> SELECT rooms.(room_no/100), count(guests.room_no)
+cyf_hotel-> FROM rooms
+cyf_hotel-> LEFT JOIN guests ON rooms.room_no = guests.room_no;
+ERROR:  syntax error at or near "("
+LINE 1: SELECT rooms.(room_no/100), count(guests.room_no)
+                     ^
+cyf_hotel=> INSERT INTO customers (name, email, address, city, postcode, country)
+cyf_hotel->   VALUES ('John Smith','j.smith@johnsmith.org',
+cyf_hotel(>           '11 New Road','Liverpool','L10 2AB','UK');
+INSERT 0 1
+cyf_hotel=> SELECT * FROM customers WHERE country='uk';
+ id | name | email | phone | address | city | postcode | country
+----+------+-------+-------+---------+------+----------+---------
+(0 rows)
+
+
+cyf_hotel=> SELECT * FROM customers WHERE name='John Smith';
+ id  |    name    |         email         |     phone     |   address   |   city    | postcode | country
+-----+------------+-----------------------+---------------+-------------+-----------+----------+---------
+   1 | John Smith | j.smith@johnsmith.org | 0151 123 4567 | 11 New Road | Liverpool | L10 2AB  | UK
+ 134 | John Smith | j.smith@johnsmith.org |               | 11 New Road | Liverpool | L10 2AB  | UK
+(2 rows)
+
+
+cyf_hotel=>
+cyf_hotel=>
+cyf_hotel=> \d customers;
+                                     Table "public.customers"
+  Column  |          Type          | Collation | Nullable |                Default
+----------+------------------------+-----------+----------+---------------------------------------
+ id       | integer                |           | not null | nextval('customers_id_seq'::regclass)
+ name     | character varying(30)  |           | not null |
+ email    | character varying(120) |           | not null |
+ phone    | character varying(20)  |           |          |
+ address  | character varying(120) |           |          |
+ city     | character varying(30)  |           |          |
+ postcode | character varying(12)  |           |          |
+ country  | character varying(20)  |           |          |
+Indexes:
+    "customers_pkey" PRIMARY KEY, btree (id)
+Referenced by:
+    TABLE "reservations" CONSTRAINT "res_guest_fk" FOREIGN KEY (cust_id) REFERENCES customers(id)
+
+\d customer;
+Did not find any relation named "customer".
+cyf_hotel=> \d customers;
+                                     Table "public.customers"
+  Column  |          Type          | Collation | Nullable |                Default
+----------+------------------------+-----------+----------+---------------------------------------
+ id       | integer                |           | not null | nextval('customers_id_seq'::regclass)
+ name     | character varying(30)  |           | not null |
+ email    | character varying(120) |           | not null |
+ phone    | character varying(20)  |           |          |
+ address  | character varying(120) |           |          |
+ city     | character varying(30)  |           |          |
+ postcode | character varying(12)  |           |          |
+ country  | character varying(20)  |           |          |
+Indexes:
+    "customers_pkey" PRIMARY KEY, btree (id)
+Referenced by:
+    TABLE "reservations" CONSTRAINT "res_guest_fk" FOREIGN KEY (cust_id) REFERENCES customers(id)
+
+
+cyf_hotel=> INSERT INTO customers (name, email, address, city, postcode, country)
+cyf_hotel->   VALUES ('John Smith','j.smith@johnsmith.org',
+cyf_hotel(> INSERT INTO customers (name, email, address, city, postcode, country)
+cyf_hotel(> q
+cyf_hotel(> \q
+PS C:\Users\mamad\Documents\GitHub\CYF-DB-Module> psql cyf_hotel mamad
+Password for user mamad:
+psql (12.13)
+WARNING: Console code page (850) differs from Windows code page (1252)
+         8-bit characters might not work correctly. See psql reference
+         page "Notes for Windows users" for details.
+Type "help" for help.
+
+cyf_hotel=> INSERT INTO customers (name, email, address, city, postcode, country)
+cyf_hotel->   VALUES ('MOHAMMAD N','M.N@HERO.org',
+cyf_hotel(>   VALUES ('12 NEW ROAD','MANCHESTER','M10 2AN','UK');
+cyf_hotel(> /Q
+cyf_hotel(>
+ *  History restored 
+
+Windows PowerShell
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Install the latest PowerShell for new features and improvements! https://aka.ms/PSWindows
+
+PS C:\Users\mamad\Documents\GitHub\CYF-DB-Module> psql cyf_hotel mamad
+Password for user mamad:
+psql: error: FATAL:  password authentication failed for user "mamad"
+PS C:\Users\mamad\Documents\GitHub\CYF-DB-Module> psql cyf_hotel mamad
+Password for user mamad:
+psql (12.13)
+WARNING: Console code page (850) differs from Windows code page (1252)
+         8-bit characters might not work correctly. See psql reference
+         page "Notes for Windows users" for details.
+Type "help" for help.
+
+cyf_hotel=> INSERT INTO customers (name, email, address, city, postcode,country)
+cyf_hotel-> VALUES ('Mohammad N','Mohammad.N@course.org','12 Rob Road','Manchester','M12 8RR','UK');
+INSERT 0 1
+cyf_hotel=> SELECT * FROM customers WHERE name= 'Mohammad N';
+ id  |    name    |         email         | phone |   address   |    city    | postcode | country
+-----+------------+-----------------------+-------+-------------+------------+----------+---------
+ 135 | Mohammad N | Mohammad.N@course.org |       | 12 Rob Road | Manchester | M12 8RR  | UK
+(1 row)
+
+
+cyf_hotel=>
+cyf_hotel=> UPDATE customers
+cyf_hotel->   SET name='Bob Marley',
+cyf_hotel->       country='Jamaica'
+cyf_hotel->   WHERE id=3;
+UPDATE 1
+cyf_hotel=> SELECT * FROM customers WHERE name= 'Bob Marley';
+ id |    name    |           email            |     phone     |   address   |    city    | postcode | countr
+y
+----+------------+----------------------------+---------------+-------------+------------+----------+-------
+--
+  3 | Bob Marley | alice.evans001@hotmail.com | 0161 345 6789 | 3 High Road | Manchester | m13 4ef  | Jamaic
+a
+(1 row)
+
+
+cyf_hotel=>   SET name='John Smith',
+cyf_hotel->       Phone='123 456 789',
+cyf_hotel->   WHERE id=134;
+ERROR:  syntax error at or near "="
+LINE 2:       Phone='123 456 789',
+                   ^
+cyf_hotel=>   SET name='John Smith',
+cyf_hotel->       Phone='123 456 789',
+cyf_hotel->   WHERE id=134;
+ERROR:  syntax error at or near "="
+LINE 2:       Phone='123 456 789',
+                   ^
+cyf_hotel=>   SET name='John Smith',
+cyf_hotel-> phone = '123 456 7899',
+cyf_hotel->   WHERE id=134;
+ERROR:  syntax error at or near "="
+LINE 2: phone = '123 456 7899',
+              ^
+cyf_hotel=> UPDATE customers
+cyf_hotel->   SET name='John Smith',
+cyf_hotel->       Phone='123 456 789',
+cyf_hotel->   WHERE id=134;
+ERROR:  syntax error at or near "WHERE"
+LINE 4:   WHERE id=134;
+          ^
+cyf_hotel=> SELECT * FROM customers WHERE name= 'JOHN SMITH';
+ id | name | email | phone | address | city | postcode | country
+----+------+-------+-------+---------+------+----------+---------
+(0 rows)
+
+
+cyf_hotel=> SELECT * FROM customers WHERE name= 'John Smith';
+ id  |    name    |         email         |     phone     |   address   |   city    | postcode | country
+-----+------------+-----------------------+---------------+-------------+-----------+----------+---------
+   1 | John Smith | j.smith@johnsmith.org | 0151 123 4567 | 11 New Road | Liverpool | L10 2AB  | UK
+ 134 | John Smith | j.smith@johnsmith.org |               | 11 New Road | Liverpool | L10 2AB  | UK
+(2 rows)
+
+
+cyf_hotel=> UPDATE customers
+cyf_hotel->   SET name='John Smith',
+cyf_hotel->       Phone='0123 456 78119',
+cyf_hotel-> WHERE id=134;
+ERROR:  syntax error at or near "WHERE"
+LINE 4: WHERE id=134;
+        ^
+cyf_hotel=> UPDATE customers
+cyf_hotel->   SET phone='0123 456 789',
+cyf_hotel-> WHERE id=134;
+ERROR:  syntax error at or near "WHERE"
+LINE 3: WHERE id=134;
+        ^
+cyf_hotel=> UPDATE customers
+cyf_hotel->   SET phone='0123 456 789',
+cyf_hotel-> WHERE id=134;
+ERROR:  syntax error at or near "WHERE"
+LINE 3: WHERE id=134;
+        ^
+cyf_hotel=> UPDATE customers
+cyf_hotel->   SET phone='0123 456 789'
+cyf_hotel-> WHERE id=134;
+UPDATE 1
+cyf_hotel=> SELECT * FROM customers WHERE name= 'John Smith';
+ id  |    name    |         email         |     phone     |   address   |   city    | postcode | country
+-----+------------+-----------------------+---------------+-------------+-----------+----------+---------
+   1 | John Smith | j.smith@johnsmith.org | 0151 123 4567 | 11 New Road | Liverpool | L10 2AB  | UK
+ 134 | John Smith | j.smith@johnsmith.org | 0123 456 789  | 11 New Road | Liverpool | L10 2AB  | UK
+(2 rows)
+
+
+cyf_hotel=> UPDATE customers
+cyf_hotel->   SET name=`Alice Evans`,
+cyf_hotel-> postcode = `M21 8UP`
+cyf_hotel->
+cyf_hotel-> UPDATE customers
+cyf_hotel->   SET postcode=`M21 8UP`,
+cyf_hotel-> WHERE name='Alice Evans';
+ERROR:  syntax error at or near "=`"
+LINE 2:   SET name=`Alice Evans`,
+                  ^
+cyf_hotel=>   SET postcode='M21 8UP',
+cyf_hotel-> WHERE name='Alice Evans';
+ERROR:  syntax error at or near "WHERE"
+LINE 2: WHERE name='Alice Evans';
+        ^
+cyf_hotel=> UPDATE customers
+cyf_hotel->   SET postcode='M21 8UP',
+cyf_hotel-> WHERE name='Alice Evans';
+ERROR:  syntax error at or near "WHERE"
+LINE 3: WHERE name='Alice Evans';
+        ^
+cyf_hotel=> SELECT * FROM customers WHERE name= 'Alice Evans';
+ id | name | email | phone | address | city | postcode | country
+----+------+-------+-------+---------+------+----------+---------
+(0 rows)
+
+
+cyf_hotel=>  UPDATE customers
+cyf_hotel->   SET postcode = 'M21 8UP'
+cyf_hotel-> WHERE name='Alice Evans';
+UPDATE 0
+cyf_hotel=> SELECT * FROM customers WHERE name= 'Alice Evans';
+ id | name | email | phone | address | city | postcode | country
+----+------+-------+-------+---------+------+----------+---------
+(0 rows)
+
+
+cyf_hotel=> UPDATE customers
+cyf_hotel->   SET postcode='M21 8UP',
+cyf_hotel->        name='M21 8UP',
+cyf_hotel-> WHERE id= 136;
+ERROR:  syntax error at or near "WHERE"
+LINE 4: WHERE id= 136;
+        ^
+cyf_hotel=> UPDATE customers
+cyf_hotel->   SET postcode='M21 8UP',
+cyf_hotel->        name='Alice Evans'
+cyf_hotel-> WHERE id= 136;
+UPDATE 0
+cyf_hotel=> UPDATE customers
+cyf_hotel->   SET postcode='M21 8UP',
+cyf_hotel->        name='Alice Evans'
+cyf_hotel-> WHERE id= 135;
+UPDATE 1
+cyf_hotel=> SELECT * FROM customers WHERE name= 'Alice Evans';
+ id  |    name     |         email         | phone |   address   |    city    | postcode | country
+-----+-------------+-----------------------+-------+-------------+------------+----------+---------
+ 135 | Alice Evans | Mohammad.N@course.org |       | 12 Rob Road | Manchester | M21 8UP  | UK
+(1 row)
+
+
+cyf_hotel=>
+cyf_hotel=> SELECT * FROM customers WHERE name= 'Alice Evans';
+ id  |    name     |         email         | phone |   address   |    city    | postcode | country
+-----+-------------+-----------------------+-------+-------------+------------+----------+---------
+ 135 | Alice Evans | Mohammad.N@course.org |       | 12 Rob Road | Manchester | M21 8UP  | UK
+(1 row)
+
+
+cyf_hotel=>  UPDATE customers
+cyf_hotel->   SET email = 'Alice.Evans@New.org',
+cyf_hotel->    address ='78 allays Road',
+cyf_hotel->  phon='012 254 789'
+cyf_hotel-> WHERE id= 135;
+ERROR:  column "phon" of relation "customers" does not exist
+LINE 4:  phon='012 254 789'
+         ^
+cyf_hotel=> UPDATE customers
+cyf_hotel->   SET email = 'Alice.Evans@New.org',
+cyf_hotel->  phone='012 254 789'
+cyf_hotel->    address ='78 allays Road'
+cyf_hotel-> WHERE id= 135;
+ERROR:  syntax error at or near "address"
+LINE 4:    address ='78 allays Road'
+           ^
+cyf_hotel=>  UPDATE customers
+cyf_hotel->   SET email = 'Alice.Evans@New.org',
+cyf_hotel->    address ='78 allays Road',
+cyf_hotel->  phone='012 254 789'
+cyf_hotel-> WHERE id= 135;
+UPDATE 1
+cyf_hotel=> SELECT * FROM customers WHERE name= 'Alice Evans';
+ id  |    name     |        email        |    phone    |    address     |    city    | postcode | country
+-----+-------------+---------------------+-------------+----------------+------------+----------+---------
+ 135 | Alice Evans | Alice.Evans@New.org | 012 254 789 | 78 allays Road | Manchester | M21 8UP  | UK
+(1 row)
+
+
+cyf_hotel=> delete FROM customers WHERE id =135;
+DELETE 1
+cyf_hotel=> SELECT r.cust_id, r.room_no, i.invoice_date, i.total
+cyf_hotel->   FROM reservations r JOIN
+cyf_hotel->        invoices i ON (r.id = i.res_id);
+ cust_id | room_no | invoice_date | total
+---------+---------+--------------+--------
+     115 |     106 | 2022-12-09   | 255.00
+      43 |     204 | 2022-12-09   | 425.00
+      30 |     109 | 2022-12-10   | 588.00
+     121 |     312 | 2022-12-10   | 123.00
+      30 |     408 | 2022-12-11   | 123.00
+      80 |     107 | 2022-12-11   | 340.00
+     104 |     309 | 2022-12-12   | 738.00
+      95 |     411 | 2022-12-12   | 615.00
+      51 |     409 | 2022-12-15   | 123.00
+     115 |     203 | 2022-12-16   | 255.00
+       2 |     412 | 2022-12-16   | 246.00
+     115 |     202 | 2022-12-18   | 170.00
+      65 |     411 | 2022-12-19   | 246.00
+      77 |     112 | 2022-12-20   |  98.00
+      15 |     201 | 2022-12-20   | 170.00
+     104 |     301 | 2022-12-21   | 110.00
+      84 |     111 | 2022-12-21   | 196.00
+     114 |     203 | 2022-12-21   | 340.00
+      64 |     104 | 2022-12-23   | 510.00
+       2 |     208 | 2022-12-25   | 588.00
+       9 |     102 | 2022-12-25   |  85.00
+      86 |     108 | 2022-12-26   |  98.00
+      25 |     109 | 2022-12-26   | 196.00
+     109 |     202 | 2022-12-26   | 170.00
+      13 |     405 | 2022-12-26   | 220.00
+      75 |     111 | 2022-12-26   | 392.00
+     130 |     209 | 2022-12-26   |  98.00
+       3 |     204 | 2022-12-27   | 255.00
+       5 |     311 | 2022-12-27   | 615.00
+      70 |     404 | 2022-12-27   | 220.00
+       5 |     104 | 2022-12-28   | 170.00
+      77 |     110 | 2022-12-29   | 294.00
+      58 |     110 | 2022-12-30   | 490.00
+      54 |     111 | 2022-12-31   | 490.00
+      29 |     212 | 2023-01-01   | 294.00
+      37 |     402 | 2023-01-02   | 550.00
+      97 |     210 | 2023-01-02   | 588.00
+      25 |     206 | 2023-01-02   | 255.00
+     102 |     202 | 2023-01-02   | 425.00
+       6 |     211 | 2023-01-02   | 294.00
+      13 |     104 | 2023-01-04   |  85.00
+     108 |     405 | 2023-01-04   | 110.00
+      25 |     103 | 2023-01-08   | 340.00
+      49 |     402 | 2023-01-08   | 440.00
+     129 |     206 | 2023-01-09   | 170.00
+     129 |     306 | 2023-01-09   | 110.00
+      14 |     303 | 2023-01-09   | 660.00
+      20 |     410 | 2023-01-12   | 615.00
+      84 |     401 | 2023-01-13   | 660.00
+       4 |     311 | 2023-01-15   | 246.00
+      30 |     404 | 2023-01-15   | 110.00
+      97 |     309 | 2023-01-18   | 246.00
+      23 |     304 | 2023-01-19   | 110.00
+      88 |     206 | 2023-01-21   |  85.00
+      67 |     401 | 2023-01-23   | 110.00
+       4 |     312 | 2023-01-23   | 369.00
+      18 |     211 | 2023-01-24   | 196.00
+       9 |     305 | 2023-01-25   | 660.00
+      38 |     411 | 2023-01-26   | 246.00
+      52 |     305 | 2023-01-29   | 110.00
+     117 |     101 | 2023-01-30   | 340.00
+      91 |     211 | 2023-01-30   | 490.00
+     131 |     301 | 2023-01-31   | 660.00
+(63 rows)
+
+
+cyf_hotel=>
+cyf_hotel=>
+cyf_hotel=>  SELECT r.cust_id, r.room_no, i.invoice_date, i.total
+cyf_hotel->       FROM reservations r JOIN
+cyf_hotel->            invoices i ON (i.res_id = r.id)
+cyf_hotel->       WHERE r.checkin_date > '2018-07-01'
+cyf_hotel->         AND i.total < 500
+cyf_hotel->       ORDER BY i.invoice_date DESC, r.cust_id;
+ cust_id | room_no | invoice_date | total
+---------+---------+--------------+--------
+      91 |     211 | 2023-01-30   | 490.00
+     117 |     101 | 2023-01-30   | 340.00
+      52 |     305 | 2023-01-29   | 110.00
+      38 |     411 | 2023-01-26   | 246.00
+      18 |     211 | 2023-01-24   | 196.00
+       4 |     312 | 2023-01-23   | 369.00
+      67 |     401 | 2023-01-23   | 110.00
+      88 |     206 | 2023-01-21   |  85.00
+      23 |     304 | 2023-01-19   | 110.00
+      97 |     309 | 2023-01-18   | 246.00
+       4 |     311 | 2023-01-15   | 246.00
+      30 |     404 | 2023-01-15   | 110.00
+     129 |     306 | 2023-01-09   | 110.00
+     129 |     206 | 2023-01-09   | 170.00
+      25 |     103 | 2023-01-08   | 340.00
+      49 |     402 | 2023-01-08   | 440.00
+      13 |     104 | 2023-01-04   |  85.00
+     108 |     405 | 2023-01-04   | 110.00
+       6 |     211 | 2023-01-02   | 294.00
+      25 |     206 | 2023-01-02   | 255.00
+     102 |     202 | 2023-01-02   | 425.00
+      29 |     212 | 2023-01-01   | 294.00
+      54 |     111 | 2022-12-31   | 490.00
+      58 |     110 | 2022-12-30   | 490.00
+      77 |     110 | 2022-12-29   | 294.00
+       5 |     104 | 2022-12-28   | 170.00
+       3 |     204 | 2022-12-27   | 255.00
+      70 |     404 | 2022-12-27   | 220.00
+      13 |     405 | 2022-12-26   | 220.00
+      25 |     109 | 2022-12-26   | 196.00
+      75 |     111 | 2022-12-26   | 392.00
+      86 |     108 | 2022-12-26   |  98.00
+     109 |     202 | 2022-12-26   | 170.00
+     130 |     209 | 2022-12-26   |  98.00
+       9 |     102 | 2022-12-25   |  85.00
+      84 |     111 | 2022-12-21   | 196.00
+     104 |     301 | 2022-12-21   | 110.00
+     114 |     203 | 2022-12-21   | 340.00
+      15 |     201 | 2022-12-20   | 170.00
+      77 |     112 | 2022-12-20   |  98.00
+      65 |     411 | 2022-12-19   | 246.00
+     115 |     202 | 2022-12-18   | 170.00
+       2 |     412 | 2022-12-16   | 246.00
+     115 |     203 | 2022-12-16   | 255.00
+      51 |     409 | 2022-12-15   | 123.00
+      30 |     408 | 2022-12-11   | 123.00
+      80 |     107 | 2022-12-11   | 340.00
+     121 |     312 | 2022-12-10   | 123.00
+      43 |     204 | 2022-12-09   | 425.00
+     115 |     106 | 2022-12-09   | 255.00
+(50 rows)
+
+
+cyf_hotel=>
+cyf_hotel=>
+cyf_hotel=>
+cyf_hotel=> SELECT r.cust_id, r.room_no, i.invoice_date, i.total
+cyf_hotel->   FROM reservations r JOIN
+cyf_hotel->        invoices i ON (r.id = i.res_id);
+ cust_id | room_no | invoice_date | total
+---------+---------+--------------+--------
+     115 |     106 | 2022-12-09   | 255.00
+      43 |     204 | 2022-12-09   | 425.00
+      30 |     109 | 2022-12-10   | 588.00
+     121 |     312 | 2022-12-10   | 123.00
+      30 |     408 | 2022-12-11   | 123.00
+      80 |     107 | 2022-12-11   | 340.00
+     104 |     309 | 2022-12-12   | 738.00
+      95 |     411 | 2022-12-12   | 615.00
+      51 |     409 | 2022-12-15   | 123.00
+     115 |     203 | 2022-12-16   | 255.00
+       2 |     412 | 2022-12-16   | 246.00
+     115 |     202 | 2022-12-18   | 170.00
+      65 |     411 | 2022-12-19   | 246.00
+      77 |     112 | 2022-12-20   |  98.00
+      15 |     201 | 2022-12-20   | 170.00
+     104 |     301 | 2022-12-21   | 110.00
+      84 |     111 | 2022-12-21   | 196.00
+     114 |     203 | 2022-12-21   | 340.00
+      64 |     104 | 2022-12-23   | 510.00
+       2 |     208 | 2022-12-25   | 588.00
+       9 |     102 | 2022-12-25   |  85.00
+      86 |     108 | 2022-12-26   |  98.00
+      25 |     109 | 2022-12-26   | 196.00
+     109 |     202 | 2022-12-26   | 170.00
+      13 |     405 | 2022-12-26   | 220.00
+      75 |     111 | 2022-12-26   | 392.00
+     130 |     209 | 2022-12-26   |  98.00
+       3 |     204 | 2022-12-27   | 255.00
+       5 |     311 | 2022-12-27   | 615.00
+      70 |     404 | 2022-12-27   | 220.00
+       5 |     104 | 2022-12-28   | 170.00
+      77 |     110 | 2022-12-29   | 294.00
+      58 |     110 | 2022-12-30   | 490.00
+      54 |     111 | 2022-12-31   | 490.00
+      29 |     212 | 2023-01-01   | 294.00
+      37 |     402 | 2023-01-02   | 550.00
+      97 |     210 | 2023-01-02   | 588.00
+      25 |     206 | 2023-01-02   | 255.00
+     102 |     202 | 2023-01-02   | 425.00
+       6 |     211 | 2023-01-02   | 294.00
+      13 |     104 | 2023-01-04   |  85.00
+     108 |     405 | 2023-01-04   | 110.00
+      25 |     103 | 2023-01-08   | 340.00
+      49 |     402 | 2023-01-08   | 440.00
+     129 |     206 | 2023-01-09   | 170.00
+     129 |     306 | 2023-01-09   | 110.00
+      14 |     303 | 2023-01-09   | 660.00
+      20 |     410 | 2023-01-12   | 615.00
+      84 |     401 | 2023-01-13   | 660.00
+       4 |     311 | 2023-01-15   | 246.00
+      30 |     404 | 2023-01-15   | 110.00
+      97 |     309 | 2023-01-18   | 246.00
+      23 |     304 | 2023-01-19   | 110.00
+      88 |     206 | 2023-01-21   |  85.00
+      67 |     401 | 2023-01-23   | 110.00
+       4 |     312 | 2023-01-23   | 369.00
+      18 |     211 | 2023-01-24   | 196.00
+       9 |     305 | 2023-01-25   | 660.00
+      38 |     411 | 2023-01-26   | 246.00
+      52 |     305 | 2023-01-29   | 110.00
+     117 |     101 | 2023-01-30   | 340.00
+      91 |     211 | 2023-01-30   | 490.00
+     131 |     301 | 2023-01-31   | 660.00
+(63 rows)
+
+
+cyf_hotel=>
+cyf_hotel=>
+cyf_hotel=>
+cyf_hotel=>
+cyf_hotel=>
+cyf_hotel=> SELECT c.name, c.phone, c.email, i.invoice_date, i.total
+cyf_hotel->   FROM customers c JOIN
+cyf_hotel->        reservations r ON (r.cust_id = c.id) JOIN
+cyf_hotel->        invoices i ON (r.id = i.res_id)
+cyf_hotel->   WHERE i.invoice_date < current_date - interval '1 month'
+cyf_hotel->     AND i.paid = FALSE
+cyf_hotel->   ORDER BY i.invoice_date DESC, c.id;
+       name       |     phone      |           email            | invoice_date | total
+------------------+----------------+----------------------------+--------------+--------
+ Mary Saveley     | 78.32.5555     | mary.saveley@yppl.net      | 2023-01-02   | 255.00
+ Bob Marley       | 0161 345 6789  | alice.evans001@hotmail.com | 2022-12-27   | 255.00
+ Roland Mendel    | 7675-3555      | roland.mendel@wclf.net     | 2022-12-16   | 255.00
+ Eduardo Saavedra | (93) 203 4555  | eduardo.saavedra@tiqa.net  | 2022-12-15   | 123.00
+ Wendy Victorino  | +65 224 1555   | wendy.victorino@ueai.net   | 2022-12-11   | 123.00
+ Carmen Anton     | +34 913 728555 | carmen.anton@bhmy.net      | 2022-12-10   | 123.00
+ Roland Mendel    | 7675-3555      | roland.mendel@wclf.net     | 2022-12-09   | 255.00
+(7 rows)
