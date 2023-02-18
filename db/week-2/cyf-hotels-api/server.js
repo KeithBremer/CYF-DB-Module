@@ -3,13 +3,12 @@ const bodyParser = require("body-parser");
 
 const app = express();
 const { Pool } = require("pg");
-const bodyParser = require("body-parsetr");
 app.use(bodyParser.json());
 
 const db = new Pool({
   user: "mamad", // replace with you username
   host: "localhost",
-  database: "cyf_hotels",
+  database: "cyf_hotel",
   password: "mamad1364",
   port: 5432,
 });
@@ -19,21 +18,24 @@ app.get("/", function (req, res) {
   res.send("<h1>Hotel Database project Home Page</h1>");
 });
 app.get("/customers", function (req, res) {
-  db.query("SELECT id,name,city,phone FROM customers", (error, result) => {
-    if (error == undefined) {
-      res.json(result.rows);
-    } else {
-      console.log(error);
-      res.status(400).json(error);
+  db.query(
+    "SELECT id,name,city,phone, email FROM customers",
+    (error, result) => {
+      if (error == undefined) {
+        res.json(result.rows);
+      } else {
+        console.log(error);
+        res.status(400).json(error);
+      }
     }
-  });
+  );
 });
 //
 //
 app.get("/customers/:id", function (req, res) {
   const custId = parseInt(req.params.id);
   db.query(
-    "SELECT id,name,city,phone FROM customers" + "where id = $1",
+    "SELECT id,name,city,phone FROM customers where id=$1",
     [custId],
     (error, result) => {
       if (error == undefined) {
@@ -50,7 +52,7 @@ app.get("/customers/:id", function (req, res) {
 app.get("/customers/by_city/:city", function (req, res) {
   const city = req.params.city;
   db.query(
-    "'SELECT id,name,city,phone FROM customers'" + "where city like $1' || '%'",
+    "SELECT id, name, city, phone FROM customers where city like $1 || '%'",
     [city],
     (error, result) => {
       if (error == undefined) {
@@ -94,8 +96,8 @@ app.put("/customers/:customerId", function (req, res) {
 });
 //
 //
-app.delete("/customers/:customerId", function (req, res) {
-  const customerId = req.params.customerId;
+app.delete("/customers/:id", function (req, res) {
+  const customerId = req.params.id;
 
   db.query("DELETE FROM customers WHERE id=$1", [customerId])
     .then(() => res.send(`Customer ${customerId} deleted!`))
