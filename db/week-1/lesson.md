@@ -177,9 +177,14 @@ When you have finished reading the output use the 'Q' key to quit the display ma
 
 ## Exercise 1
 1. List the name, phone and email of all customers
+=> SELECT name, phone, email
+FROM customers;
 2. List all the details of rooms
+  => SELECT *
+FROM rooms;
 3. List the customer id, checkin date and number of guests from reservations
-
+ =>SELECT cust_id, checkin_date, no_guests
+FROM reservations;
 ---
 ## Some Useful `psql` Commands
 The `psql` commands are not SQL and are specific to PostgreSQL (although most other RDBMS's have commands to perform similar jobs). These commands let you display information, execute system commands, etc. Use \\? to display a summary of all the `psql` commands.
@@ -209,7 +214,9 @@ Note that `psql` commands ARE case sensitive, unlike SQL commands.
 ---
 ## Exercise 2
 1.  Display the definition of the `customers` table
+=> \d
 2.  Display the help for the SELECT command (Note: we will not be covering ALL of this syntax!)
+ => \h select
 3.  Read the psql command help and find out what \dS does then try it
 
 ---
@@ -391,13 +398,37 @@ Note: PostgreSQL also has the non-standard operator ILIKE that can perform a cas
 
 ---
 ## Exercise 3
-1.  Which customers are from Norway?
+1.  
+SELECT *                              
+  => FROM customers
+WHERE country = 'Norway';
 2.  Which rooms can accommodate more than two people?
+    => SELECT room_no, room_type, no_guests
+     FROM rooms
+     WHERE no_guests > 2;
 3.  Which invoices are dated after one month ago?
+  => SELECT id, invoice_date
+FROM invoices
+WHERE invoice_date > (CURRENT_DATE - INTERVAL '1 month');
 4.  How would last month's invoices change if we gave a discount of 15%
-5.  List all customers whose second name starts with 'M' (hint: there's a space before the second name)
+  
+<!-- =>  --Step 1: Identify the date range for last month -->
+WITH date_range AS (
+  SELECT
+    DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month') AS start_date,
+    DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 day' AS end_date
+)
 
----
+<!-- -- Step 2: Retrieve the invoices for last month -->
+SELECT id, total AS original_total,
+  total * 0.85 AS discounted_total
+FROM invoices
+JOIN date_range ON invoice_date >= date_range.start_date AND invoice_date <= date_range.end_date;
+5.  List all customers whose second name starts with 'M' (hint: there's a space before the second name)
+=>  SELECT id, name, phone, email, country
+FROM customers
+WHERE SPLIT_PART(name, ' ', 2) LIKE 'M%';
+
 ### Using SQL Functions
 You can use the built-in functions of SQL just as you can in JavaScript, but note that they are different (this is true of most programming languages) but there are also differences between SQL implementations.
 
@@ -449,10 +480,23 @@ You can also represent time intervals but the representations can be complicated
 ---
 ## Exercise 4
 1.  Write a query to check that all booking dates are before their checkin dates
+ =>   cyf_hotel=# SELECT *
+FROM reservations
+WHERE booking_date >= checkin_date;
 2.  We plan to offer a discount of 10% on all Premier and Premier Plus rooms next month. How much would we gain on each room if occupancy rose by 5 nights over the month.
-3.  List all reservations for this month and the number of nights booked.
 
----
+=> SELECT room_type,
+       (rate * 5 * 0.10) AS gain_per_room
+FROM rooms
+WHERE room_type IN ('PREMIER', 'PREMIER PLUS');
+3.  List all reservations for this month and the number of nights booked.
+  =>  SELECT id AS reservation_id,
+       checkin_date,
+       checkout_date,
+       (checkout_date - checkin_date) AS nights_booked
+FROM reservations
+WHERE EXTRACT(MONTH FROM checkin_date) = EXTRACT(MONTH FROM CURRENT_DATE);
+
 ## Eliminating Duplicates
 "Which nationalities visit our hotel?":
 ```sql
@@ -528,11 +572,21 @@ Not all SQL implementations of SQL support LIMIT, some use TOP while Oracle uses
 ## Exercise 5
 
 1.  List the different room types and rates for all rooms avoiding duplicates.
+    SELECT DISTINCT room_type, rate
+FROM rooms;
 2.  List customers' names addresses and phone numbers in alphabetic order of names.
+    => SELECT name, address, phone
+FROM customers
+ORDER BY name;
 3.  List customers' names, addresses, city and country in ascending order of country then reverse order of city within country.
+  =>  SELECT name, address, city, country
+FROM customers
+ORDER BY country ASC, city DESC;
 4.  List the room number, type and the cost of staying 5 nights in each of the top 15 most expensive rooms.
-
----
+   => SELECT room_no, room_type, (rate * 5) AS cost_5_nights
+FROM rooms
+ORDER BY rate DESC
+LIMIT 15;
 ## Summary
 
 In this lesson you have learned the use of databases and how relational databases are structured. You've also learned how to use basic single-table query commands in SQL and some of the special 'backslash' commands in `psql`. You have used the SELECT command to control the columns and values that are returned, the DISTINCT, ORDER BY and LIMIT clauses to control the order and numbers of rows returned and you've used the WHERE clause to choose the rows that you access. You have learned the INSERT command to add new data to the database
