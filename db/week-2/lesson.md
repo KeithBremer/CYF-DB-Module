@@ -98,8 +98,17 @@ SELECT count(*) FROM customers WHERE country = 'Belgium';
 ### Exercise 1
 
 1.  Get the numbers of rows in each of the tables: rooms, room_types, customers and reservations.
+=> SELECT 'rooms' AS table_name, COUNT(*) AS row_count FROM rooms
+ UNION ALL
+   SELECT 'room_types' AS table_name, COUNT(*) AS row_count FROM room_types
+   UNION ALL
+   SELECT 'customers' AS table_name, COUNT(*) AS row_count FROM customers
+   UNION ALL
+   SELECT 'reservations' AS table_name, COUNT(*) AS row_count FROM reservations;
 2.  How many reservations do we have for next month?
+
 3.  How many invoices are still unpaid from over a month ago and what is the total owed?
+SELECT COUNT(*) AS 
 4.  What is the maximum gap in days between a customer booking a room and the checkin date for that booking?
 
 ### Grouping Rows for Aggregation
